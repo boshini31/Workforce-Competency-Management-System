@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pandas
+scikit-learn
+openpyxl
+joblib
+sqlalchemy
+psycopg2-binary
+spacy

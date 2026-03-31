@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login & Signup</title>
+<style>
+body{
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-family:Arial;
+  background:linear-gradient(135deg,#2b6cb0,#2c5282);
+}
+.container{
+  background:white;
+  padding:30px;
+  width:330px;
+  border-radius:8px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.2);
+}
+h2{ text-align:center; margin-bottom:20px; }
+input{
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+  border:1px solid #ccc;
+  border-radius:5px;
+  box-sizing:border-box;
+}
+button{
+  width:100%;
+  padding:10px;
+  border:none;
+  background:#2b6cb0;
+  color:white;
+  border-radius:5px;
+  cursor:pointer;
+  font-size:15px;
+  margin-top:5px;
+}
+button:hover{ background:#1a4f8a; }
+p{ text-align:center; }
+a{ color:#2b6cb0; cursor:pointer; }
+.hidden{ display:none; }
+.error{ color:red; text-align:center; font-size:13px; margin-top:8px; }
+.success{ color:green; text-align:center; font-size:13px; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- LOGIN -->
+  <div id="login">
+    <h2>Login</h2>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="loginMsg"></p>
+    <p>Don't have an account? <a onclick="showSignup()">Signup</a></p>
+  </div>
+
+  <!-- SIGNUP -->
+  <div id="signup" class="hidden">
+    <h2>Signup</h2>
+    <input type="text" id="sname" placeholder="Name">
+    <input type="email" id="semail" placeholder="Email">
+    <input type="password" id="spassword" placeholder="Password">
+    <button onclick="signup()">Signup</button>
+    <p id="signupMsg"></p>
+    <p>Already have an account? <a onclick="showLogin()">Login</a></p>
+  </div>
+
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+
+function showSignup(){
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("signup").classList.remove("hidden");
+}
+function showLogin(){
+  document.getElementById("signup").classList.add("hidden");
+  document.getElementById("login").classList.remove("hidden");
+}
+
+async function signup(){
+  const name     = document.getElementById("sname").value.trim();
+  const email    = document.getElementById("semail").value.trim();
+  const password = document.getElementById("spassword").value;
+  const msg      = document.getElementById("signupMsg");
+
+  if(!name || !email || !password){
+    msg.className = "error";
+    msg.textContent = "Please fill all fields";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password })
+    });
+    const data = await res.json();
+    if(res.ok){
+      msg.className = "success";
+      msg.textContent = "Signup successful! Please login.";
+      setTimeout(showLogin, 1500);
+    } else {
+      msg.className = "error";
+      msg.textContent = data.detail || "Signup failed";
+    }
+  } catch(e){
+    msg.className = "error";
+    msg.textContent = "Cannot reach server. Is backend running?";
+  }
+}
+
+async function login(){
+  const email    = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const msg      = document.getElementById("loginMsg");
+
+  if(!email || !password){
+    msg.className = "error";
+    msg.textContent = "Please fill all fields";
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if(res.ok){
+      // ✅ Store user info and redirect
+      localStorage.setItem("loggedInUser", JSON.stringify({ name: data.name, email: data.email }));
+      window.location.href = "dashboard.html";
+    } else {
+      msg.className = "error";
+      msg.textContent = data.detail || "Invalid login";
+    }
+  } catch(e){
+    msg.className = "error";
+    msg.textContent = "Cannot reach server. Is backend running?";
+  }
+}
+</script>
+</body>
+</html>

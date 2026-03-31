@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Employee Analytics Dashboard</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<h2>Dashboard</h2>
+
+<ul>
+<li>Dashboard</li>
+<li>Upload Data</li>
+<li>Analysis</li>
+<li>Performance</li>
+</ul>
+
+</div>
+
+<div class="main">
+
+<h1>Employee Analytics Dashboard</h1>
+
+<div class="cards">
+
+<div class="card">
+<h3>Total Employees</h3>
+<p>120</p>
+</div>
+
+<div class="card">
+<h3>Bench Employees</h3>
+<p>15</p>
+</div>
+
+<div class="card">
+<h3>Active Projects</h3>
+<p>8</p>
+</div>
+
+<div class="card">
+<h3>High Performers</h3>
+<p>35</p>
+</div>
+
+</div>
+
+<div class="table-section">
+
+<h2>Employee Utilization Analysis</h2>
+
+<table>
+
+<tr>
+<th>Name</th>
+<th>Location</th>
+<th>Bench Days</th>
+<th>Projects</th>
+<th>Utilization</th>
+</tr>
+
+<tr>
+<td>John</td>
+<td>Chennai</td>
+<td>5</td>
+<td>2</td>
+<td>80%</td>
+</tr>
+
+<tr>
+<td>Priya</td>
+<td>Bangalore</td>
+<td>12</td>
+<td>1</td>
+<td>65%</td>
+</tr>
+
+<tr>
+<td>Arun</td>
+<td>Hyderabad</td>
+<td>20</td>
+<td>0</td>
+<td>30%</td>
+</tr>
+
+</table>
+
+</div>
+
+<div class="chart-box">
+
+<h2>Performance Overview</h2>
+
+<canvas id="chart"></canvas>
+
+</div>
+
+</div>
+
+<script>
+
+const ctx = document.getElementById('chart');
+
+new Chart(ctx, {
+type: 'doughnut',
+data: {
+labels: ['High','Moderate','Low'],
+datasets: [{
+data: [35,60,25]
+}]
+}
+});
+
+</script>
+
+</body>
+</html>

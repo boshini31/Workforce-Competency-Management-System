@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Performance</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body{
+            font-family: Arial;
+            margin: 20px;
+        }
+
+        .chart-box{
+            width: 320px;
+            height: 260px;
+            background: #f4f6f9;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+
+        .chart-container{
+            display: flex;
+            gap: 40px;
+        }
+
+        canvas{
+            width: 100% !important;
+            height: 200px !important;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Employee Performance</h2>
+
+<div class="chart-container">
+<a href="dashboard.html" class="back-btn">⬅ Back</a>
+    <div class="chart-box">
+        <h4>Performance Overview</h4>
+        <canvas id="pie"></canvas>
+    </div>
+
+    <div class="chart-box">
+        <h4>Bench Duration</h4>
+        <canvas id="bar"></canvas>
+    </div>
+
+</div>
+
+<script>
+window.onload = function(){
+    let data = JSON.parse(localStorage.getItem("employeeData")) || []
+    loadCharts(data)
+}
+
+function loadCharts(data){
+
+    let high=0, mod=0, low=0;
+    let b1=0, b2=0, b3=0, b4=0;
+
+    data.forEach(e=>{
+        let days = Number(e["TOTAL AVB DAYS (MTD)"]);
+
+        // Performance
+        if(days < 10) high++;
+        else if(days <= 20) mod++;
+        else low++;
+
+        // Bench Duration
+        if(days <= 10) b1++;
+        else if(days <= 20) b2++;
+        else if(days <= 30) b3++;
+        else b4++;
+    });
+
+    // Pie Chart
+    new Chart(document.getElementById("pie"),{
+        type:"doughnut",
+        data:{
+            labels:["High","Moderate","Low"],
+            datasets:[{
+                data:[high, mod, low],
+                backgroundColor:["green","orange","red"]
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false
+        }
+    });
+
+    // Bar Chart
+    new Chart(document.getElementById("bar"),{
+        type:"bar",
+        data:{
+            labels:["0-10","11-20","21-30",">30"],
+            datasets:[{
+                label:"Bench Days",
+                data:[b1,b2,b3,b4],
+                backgroundColor:["blue","orange","purple","red"]
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false
+        }
+    });
+
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Upload Employee Data</title>
+<style>
+body{
+  font-family:Arial;
+  background:#f4f6f9;
+  margin:0;
+  padding:40px;
+}
+.container{
+  background:white;
+  padding:30px;
+  border-radius:8px;
+  width:420px;
+  margin:auto;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+  text-align:center;
+}
+button{
+  background:#3f6db3;
+  color:white;
+  border:none;
+  padding:10px 20px;
+  border-radius:5px;
+  cursor:pointer;
+  margin-top:10px;
+  font-size:14px;
+}
+button:hover{ background:#2f5fa7; }
+.back-btn{
+  display:inline-block;
+  margin-top:10px;
+  margin-right:10px;
+  padding:10px 20px;
+  background:#ccc;
+  color:#333;
+  border-radius:5px;
+  text-decoration:none;
+  font-size:14px;
+}
+#status{ margin-top:15px; font-size:14px; line-height:1.8; }
+.success{ color:green; }
+.error{ color:red; }
+.loading{ color:#3f6db3; }
+#progressWrap{
+  display:none;
+  margin-top:15px;
+  background:#eee;
+  border-radius:5px;
+  height:10px;
+}
+#progressBar{
+  height:10px;
+  width:0%;
+  background:#3f6db3;
+  border-radius:5px;
+  transition:width 0.3s;
+}
+.summary-box{
+  margin-top:15px;
+  background:#f0f9f0;
+  border:1px solid #c3e6cb;
+  border-radius:6px;
+  padding:12px;
+  text-align:left;
+  font-size:14px;
+  display:none;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Upload Employee Dataset</h2>
+  <p style="color:#777;font-size:13px;">Excel must contain: <b>Name, Skill, Grade, Bench_Days</b> columns</p>
+
+  <input type="file" id="fileInput" accept=".xlsx,.xls">
+
+  <div id="progressWrap"><div id="progressBar"></div></div>
+
+  <br>
+  <a href="dashboard.html" class="back-btn">Back</a>
+  <button onclick="uploadFile()">Upload & Process</button>
+
+  <p id="status"></p>
+
+  <div class="summary-box" id="summaryBox">
+    <strong>Upload Summary</strong><br><br>
+    <span id="summAdded" style="color:green;"></span><br>
+    <span id="summSkipped" style="color:orange;"></span><br>
+    <span id="summTotal" style="color:#555;font-size:13px;"></span>
+  </div>
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+
+if(!localStorage.getItem("loggedInUser")){
+  window.location.href = "login.html";
+}
+
+async function uploadFile(){
+  const fileInput = document.getElementById("fileInput");
+  const status    = document.getElementById("status");
+  const progress  = document.getElementById("progressWrap");
+  const bar       = document.getElementById("progressBar");
+  const summBox   = document.getElementById("summaryBox");
+
+  status.textContent = "";
+  status.className   = "";
+  summBox.style.display = "none";
+
+  const file = fileInput.files[0];
+  if(!file){
+    status.className   = "error";
+    status.textContent = "Please select an Excel file first.";
+    return;
+  }
+
+  progress.style.display = "block";
+  bar.style.width = "30%";
+  status.className   = "loading";
+  status.textContent = "Uploading and processing...";
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    bar.style.width = "60%";
+
+    const res = await fetch(`${API}/upload`, {
+      method: "POST",
+      body: formData
+    });
+
+    bar.style.width = "90%";
+
+    const data = await res.json();
+
+    if(!res.ok){
+      bar.style.width = "0%";
+      progress.style.display = "none";
+      status.className   = "error";
+      status.textContent = "Error: " + (data.detail || "Upload failed");
+      return;
+    }
+
+    bar.style.width = "100%";
+
+    // ✅ Save processed records to localStorage for dashboard
+    localStorage.setItem("employeeData", JSON.stringify(data.records));
+    localStorage.setItem("uploadCount", data.added);
+
+    // ✅ Show duplicate summary
+    status.className   = "success";
+    status.textContent = "Upload complete! Redirecting to dashboard...";
+
+    document.getElementById("summAdded").textContent   = "✔ " + data.added   + " new records added to database";
+    document.getElementById("summSkipped").textContent = "⚠ " + data.skipped + " duplicate rows skipped";
+    document.getElementById("summTotal").textContent   = "Total rows in file: " + data.total;
+    summBox.style.display = "block";
+
+    setTimeout(() => window.location.href = "dashboard.html", 2500);
+
+  } catch(e){
+    progress.style.display = "none";
+    status.className   = "error";
+    status.textContent = "Cannot reach server. Make sure backend is running on port 8000.";
+  }
+}
+</script>
+</body>
+</html>
