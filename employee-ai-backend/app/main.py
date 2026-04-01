@@ -9,7 +9,8 @@ app = FastAPI()
 # ✅ CORS — allows your frontend HTML files to call the backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace * with your frontend URL
+    allow_origins=["https://workforce-competency-management-sys.vercel.app",
+                   "http://localhost:3000"],  # In production, replace * with your frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
