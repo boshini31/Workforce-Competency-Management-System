@@ -9,7 +9,7 @@ An intelligent employee analytics platform that uses machine learning to categor
 - **Excel Upload** — Upload employee datasets and auto-process them with ML
 - **Duplicate Detection** — Skips exact duplicate records on every upload
 - **ML Categorization** — Automatically classifies employees as High / Medium / Low performers
-- **Project Assignment** — Auto-assigns projects based on ML prediction
+- **Project Assignment** — Auto-assigns projects based on ML prediction.
 - **Course Recommendation** — Recommends training courses based on employee skill
 - **Authentication** — Signup & Login with password hashing (SHA-256)
 - **Admin Panel** — Add or delete employees manually with live search
