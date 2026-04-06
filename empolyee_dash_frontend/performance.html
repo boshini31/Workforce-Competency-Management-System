@@ -1,112 +1,439 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Performance</title>
+    <title>Performance & Course Tracking</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        body{
-            font-family: Arial;
-            margin: 20px;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .chart-box{
-            width: 320px;
-            height: 260px;
+        body {
+            font-family: Arial, sans-serif;
             background: #f4f6f9;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 0 5px rgba(0,0,0,0.1);
         }
 
-        .chart-container{
-            display: flex;
-            gap: 40px;
+        /* ── Topbar ── */
+        .topbar {
+            background: #3f6db3; color: white;
+            padding: 15px 25px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .topbar a { color: white; text-decoration: none; margin-left: 15px; }
+
+        /* ── Page wrapper ── */
+        .page { padding: 25px; }
+
+        /* ── Section headings ── */
+        .section-title {
+            font-size: 18px; font-weight: bold;
+            color: #3f6db3; margin: 30px 0 15px;
+            border-left: 4px solid #3f6db3; padding-left: 10px;
         }
 
-        canvas{
-            width: 100% !important;
-            height: 200px !important;
+        /* ── Performance charts ── */
+        .chart-container {
+            display: flex; gap: 25px; flex-wrap: wrap; margin-bottom: 10px;
+        }
+        .chart-box {
+            background: white; padding: 18px;
+            border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            flex: 1; min-width: 280px; max-width: 380px;
+        }
+        .chart-box h4 { color: #444; margin-bottom: 12px; font-size: 14px; }
+        canvas { width: 100% !important; height: 200px !important; }
+
+        /* ── Summary cards ── */
+        .summary-cards {
+            display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px;
+        }
+        .card {
+            background: white; border-radius: 10px;
+            padding: 18px 24px; flex: 1; min-width: 140px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        .card .num { font-size: 32px; font-weight: bold; }
+        .card .lbl { font-size: 13px; color: #777; margin-top: 4px; }
+        .card.blue   .num { color: #3f6db3; }
+        .card.green  .num { color: #28a745; }
+        .card.orange .num { color: #fd7e14; }
+        .card.red    .num { color: #dc3545; }
+
+        /* ── Course tracking table ── */
+        .table-wrapper {
+            background: white; border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .table-controls {
+            display: flex; gap: 10px; padding: 15px; flex-wrap: wrap; align-items: center;
+            border-bottom: 1px solid #eee;
+        }
+        .filter-btn {
+            padding: 7px 14px; border: none; background: #3f6db3;
+            color: white; border-radius: 5px; cursor: pointer; font-size: 13px;
+        }
+        .filter-btn:hover { background: #2f5fa7; }
+        .filter-btn.active { background: #1e3f73; }
+        .search-input {
+            padding: 7px 12px; border: 1px solid #ccc;
+            border-radius: 5px; font-size: 13px; width: 200px;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th {
+            background: #3f6db3; color: white;
+            padding: 10px 12px; text-align: left;
+        }
+        td { padding: 10px 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        tr:hover { background: #f0f4ff; }
+
+        /* ── Progress bar ── */
+        .progress-wrap {
+            background: #e9ecef; border-radius: 20px;
+            height: 10px; width: 120px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; border-radius: 20px; transition: width 0.4s;
+        }
+        .pct-label { font-size: 11px; color: #555; margin-top: 2px; }
+
+        /* ── Status badges ── */
+        .badge {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 10px; font-size: 11px; font-weight: bold;
+        }
+        .badge-completed  { background: #d4edda; color: #155724; }
+        .badge-inprogress { background: #cce5ff; color: #004085; }
+        .badge-overdue    { background: #f8d7da; color: #721c24; }
+
+        /* ── Days remaining pill ── */
+        .days-pill {
+            display: inline-block; padding: 3px 9px;
+            border-radius: 10px; font-size: 11px; font-weight: bold;
+            background: #fff3cd; color: #856404;
+        }
+        .days-pill.done { background: #d4edda; color: #155724; }
+        .days-pill.late { background: #f8d7da; color: #721c24; }
+
+        /* ── Course tracking chart ── */
+        .course-chart-row {
+            display: flex; gap: 25px; flex-wrap: wrap; margin-bottom: 25px;
+        }
+
+        .back-btn {
+            padding: 8px 15px; background: #ccc; color: #333;
+            border-radius: 5px; text-decoration: none; font-size: 13px;
         }
     </style>
 </head>
 <body>
 
-<h2>Employee Performance</h2>
-
-<div class="chart-container">
-<a href="dashboard.html" class="back-btn">⬅ Back</a>
-    <div class="chart-box">
-        <h4>Performance Overview</h4>
-        <canvas id="pie"></canvas>
+<div class="topbar">
+    <h2 style="margin:0;">Performance &amp; Course Tracking</h2>
+    <div>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="analysis.html">Analysis</a>
+        <a href="upload.html">Upload</a>
+        <a href="admin.html">Admin</a>
     </div>
-
-    <div class="chart-box">
-        <h4>Bench Duration</h4>
-        <canvas id="bar"></canvas>
-    </div>
-
 </div>
 
+<div class="page">
+
+    <!-- ════════════════════════════════════
+         SECTION 1 — Performance Charts
+    ════════════════════════════════════ -->
+    <div class="section-title">📊 Employee Performance Overview</div>
+
+    <div class="chart-container">
+        <div class="chart-box">
+            <h4>Performance Category</h4>
+            <canvas id="pie"></canvas>
+        </div>
+        <div class="chart-box">
+            <h4>Bench Duration (Days)</h4>
+            <canvas id="bar"></canvas>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════
+         SECTION 2 — Course Tracking Summary
+    ════════════════════════════════════ -->
+    <div class="section-title">📚 Course Tracking Summary</div>
+
+    <div class="summary-cards">
+        <div class="card blue">
+            <div class="num" id="totalCourses">—</div>
+            <div class="lbl">Total Assigned</div>
+        </div>
+        <div class="card green">
+            <div class="num" id="completedCourses">—</div>
+            <div class="lbl">Completed</div>
+        </div>
+        <div class="card orange">
+            <div class="num" id="inProgressCourses">—</div>
+            <div class="lbl">In Progress</div>
+        </div>
+        <div class="card red">
+            <div class="num" id="overdueCourses">—</div>
+            <div class="lbl">Overdue</div>
+        </div>
+    </div>
+
+    <!-- Course Status + Timeline Charts -->
+    <div class="course-chart-row">
+        <div class="chart-box">
+            <h4>Course Status Breakdown</h4>
+            <canvas id="courseStatusChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <h4>Avg Progress by Course</h4>
+            <canvas id="courseProgressChart"></canvas>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════
+         SECTION 3 — Course Tracking Table
+    ════════════════════════════════════ -->
+    <div class="section-title">🗂️ Course Tracking Details</div>
+
+    <div class="table-wrapper">
+        <div class="table-controls">
+            <button class="filter-btn active" onclick="filterCourses('all',        this)">All</button>
+            <button class="filter-btn"        onclick="filterCourses('In Progress', this)">In Progress</button>
+            <button class="filter-btn"        onclick="filterCourses('Completed',   this)">Completed</button>
+            <button class="filter-btn"        onclick="filterCourses('Overdue',     this)">Overdue</button>
+            <input  class="search-input" id="courseSearch" placeholder="Search employee or course…" oninput="renderCourseTable()">
+            <a href="dashboard.html" class="back-btn">⬅ Back</a>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Employee</th>
+                    <th>Course</th>
+                    <th>Assigned</th>
+                    <th>Deadline</th>
+                    <th>Progress</th>
+                    <th>Days Left</th>
+                    <th>Status</th>
+                    <th>Completed On</th>
+                </tr>
+            </thead>
+            <tbody id="courseTable"></tbody>
+        </table>
+    </div>
+
+</div><!-- /page -->
+
 <script>
-window.onload = function(){
-    let data = JSON.parse(localStorage.getItem("employeeData")) || []
-    loadCharts(data)
+const API = "https://workforce-competency-management-system.onrender.com";
+
+// Guard
+if (!localStorage.getItem("loggedInUser")) {
+    window.location.href = "login.html";
 }
 
-function loadCharts(data){
+let allCourseData  = [];
+let activeCourseFilter = "all";
 
-    let high=0, mod=0, low=0;
-    let b1=0, b2=0, b3=0, b4=0;
+window.onload = async function () {
+    // ── Performance charts (existing) ──────────────────────────
+    const empData = JSON.parse(localStorage.getItem("employeeData")) || [];
+    loadPerformanceCharts(empData);
 
-    data.forEach(e=>{
-        let days = Number(e["TOTAL AVB DAYS (MTD)"]);
+    // ── Course tracking data ────────────────────────────────────
+    try {
+        const res = await fetch(`${API}/course-tracking`);
+        allCourseData = await res.json();
+        localStorage.setItem("courseTrackingData", JSON.stringify(allCourseData));
+    } catch (e) {
+        allCourseData = JSON.parse(localStorage.getItem("courseTrackingData")) || [];
+    }
 
-        // Performance
-        if(days < 10) high++;
-        else if(days <= 20) mod++;
-        else low++;
+    loadCourseSummaryCards(allCourseData);
+    loadCourseCharts(allCourseData);
+    renderCourseTable();
+};
 
-        // Bench Duration
-        if(days <= 10) b1++;
-        else if(days <= 20) b2++;
-        else if(days <= 30) b3++;
-        else b4++;
+
+/* ─────────────────────────────────────────────
+   PERFORMANCE CHARTS  (your existing logic)
+───────────────────────────────────────────── */
+function loadPerformanceCharts(data) {
+    let high = 0, mod = 0, low = 0;
+    let b1 = 0, b2 = 0, b3 = 0, b4 = 0;
+
+    data.forEach(e => {
+        const days = Number(e["TOTAL AVB DAYS (MTD)"]);
+        if (days < 10) high++; else if (days <= 20) mod++; else low++;
+        if (days <= 10) b1++; else if (days <= 20) b2++; else if (days <= 30) b3++; else b4++;
     });
 
-    // Pie Chart
-    new Chart(document.getElementById("pie"),{
-        type:"doughnut",
-        data:{
-            labels:["High","Moderate","Low"],
-            datasets:[{
-                data:[high, mod, low],
-                backgroundColor:["green","orange","red"]
+    new Chart(document.getElementById("pie"), {
+        type: "doughnut",
+        data: {
+            labels: ["High", "Moderate", "Low"],
+            datasets: [{ data: [high, mod, low], backgroundColor: ["#28a745", "#fd7e14", "#dc3545"] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    new Chart(document.getElementById("bar"), {
+        type: "bar",
+        data: {
+            labels: ["0–10", "11–20", "21–30", ">30"],
+            datasets: [{
+                label: "Bench Days", data: [b1, b2, b3, b4],
+                backgroundColor: ["#3f6db3", "#fd7e14", "#6f42c1", "#dc3545"]
             }]
         },
-        options:{
-            responsive:true,
-            maintainAspectRatio:false
-        }
+        options: { responsive: true, maintainAspectRatio: false }
     });
+}
 
-    // Bar Chart
-    new Chart(document.getElementById("bar"),{
-        type:"bar",
-        data:{
-            labels:["0-10","11-20","21-30",">30"],
-            datasets:[{
-                label:"Bench Days",
-                data:[b1,b2,b3,b4],
-                backgroundColor:["blue","orange","purple","red"]
+
+/* ─────────────────────────────────────────────
+   COURSE SUMMARY CARDS
+───────────────────────────────────────────── */
+function loadCourseSummaryCards(data) {
+    const total     = data.length;
+    const completed = data.filter(r => r.status === "Completed").length;
+    const inprog    = data.filter(r => r.status === "In Progress").length;
+    const overdue   = data.filter(r => r.status === "Overdue").length;
+
+    document.getElementById("totalCourses").textContent    = total;
+    document.getElementById("completedCourses").textContent = completed;
+    document.getElementById("inProgressCourses").textContent = inprog;
+    document.getElementById("overdueCourses").textContent  = overdue;
+}
+
+
+/* ─────────────────────────────────────────────
+   COURSE CHARTS
+───────────────────────────────────────────── */
+function loadCourseCharts(data) {
+    // Status donut
+    const completed = data.filter(r => r.status === "Completed").length;
+    const inprog    = data.filter(r => r.status === "In Progress").length;
+    const overdue   = data.filter(r => r.status === "Overdue").length;
+
+    new Chart(document.getElementById("courseStatusChart"), {
+        type: "doughnut",
+        data: {
+            labels: ["Completed", "In Progress", "Overdue"],
+            datasets: [{
+                data: [completed, inprog, overdue],
+                backgroundColor: ["#28a745", "#3f6db3", "#dc3545"]
             }]
         },
-        options:{
-            responsive:true,
-            maintainAspectRatio:false
-        }
+        options: { responsive: true, maintainAspectRatio: false }
     });
 
+    // Avg progress per course (bar)
+    const courseMap = {};
+    data.forEach(r => {
+        if (!courseMap[r.course_name]) courseMap[r.course_name] = [];
+        courseMap[r.course_name].push(r.progress_percent);
+    });
+    const courseLabels = Object.keys(courseMap).slice(0, 8); // max 8 for readability
+    const courseAvgs   = courseLabels.map(c => {
+        const arr = courseMap[c];
+        return Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
+    });
+
+    new Chart(document.getElementById("courseProgressChart"), {
+        type: "bar",
+        data: {
+            labels: courseLabels.length ? courseLabels : ["No Data"],
+            datasets: [{
+                label: "Avg Progress %",
+                data: courseAvgs.length ? courseAvgs : [0],
+                backgroundColor: "#3f6db3"
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { min: 0, max: 100 } }
+        }
+    });
+}
+
+
+/* ─────────────────────────────────────────────
+   COURSE TABLE
+───────────────────────────────────────────── */
+function filterCourses(status, btn) {
+    activeCourseFilter = status;
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    renderCourseTable();
+}
+
+function renderCourseTable() {
+    const q = (document.getElementById("courseSearch").value || "").toLowerCase();
+
+    let data = allCourseData;
+
+    // Status filter
+    if (activeCourseFilter !== "all") {
+        data = data.filter(r => r.status === activeCourseFilter);
+    }
+
+    // Search filter
+    if (q) {
+        data = data.filter(r =>
+            (r.employee_name || "").toLowerCase().includes(q) ||
+            (r.course_name   || "").toLowerCase().includes(q)
+        );
+    }
+
+    const tbody = document.getElementById("courseTable");
+    tbody.innerHTML = "";
+
+    if (!data.length) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#999;padding:20px;">No records found.</td></tr>`;
+        return;
+    }
+
+    data.forEach((r, i) => {
+        const statusClass =
+            r.status === "Completed"  ? "badge-completed"  :
+            r.status === "Overdue"    ? "badge-overdue"    : "badge-inprogress";
+
+        const fillColor =
+            r.status === "Completed" ? "#28a745" :
+            r.status === "Overdue"   ? "#dc3545" : "#3f6db3";
+
+        const daysClass =
+            r.status === "Completed" ? "done" :
+            r.status === "Overdue"   ? "late" : "";
+
+        const daysLabel =
+            r.status === "Completed" ? "Done" :
+            r.status === "Overdue"   ? "Overdue" :
+            `${r.days_remaining}d left`;
+
+        tbody.innerHTML += `<tr>
+            <td>${i + 1}</td>
+            <td>${r.employee_name || "—"}</td>
+            <td>${r.course_name   || "—"}</td>
+            <td>${r.assigned_date || "—"}</td>
+            <td>${r.deadline_date || "—"}</td>
+            <td>
+                <div class="progress-wrap">
+                    <div class="progress-fill" style="width:${r.progress_percent}%;background:${fillColor};"></div>
+                </div>
+                <div class="pct-label">${r.progress_percent}%</div>
+            </td>
+            <td><span class="days-pill ${daysClass}">${daysLabel}</span></td>
+            <td><span class="badge ${statusClass}">${r.status}</span></td>
+            <td>${r.completion_date || "—"}</td>
+        </tr>`;
+    });
 }
 </script>
 

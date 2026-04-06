@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+from app.db_models import CourseTracking 
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pydantic import BaseModel
 import pandas as pd
@@ -176,3 +178,175 @@ def delete_employee(emp_id: int):
     db.commit()
     db.close()
     return {"message": "Employee deleted successfully"}
+
+
+  # add CourseTracking to existing import line
+
+
+# ── Pydantic schemas ──────────────────────────────────────────────
+
+class AssignCourseRequest(BaseModel):
+    employee_id: int
+    course_name: str
+    duration_days: int = 30          # default 30-day window
+
+class UpdateProgressRequest(BaseModel):
+    progress_percent: float          # 0–100
+
+class CompleteCourseRequest(BaseModel):
+    completion_date: str             # "YYYY-MM-DD"
+
+
+# ── Helper: auto-compute status ───────────────────────────────────
+
+def compute_status(deadline: date, completion: date | None, progress: float) -> str:
+    if completion:
+        return "Completed"
+    if date.today() > deadline:
+        return "Overdue"
+    return "In Progress"
+
+
+# ── Assign a course to an employee ───────────────────────────────
+
+@router.post("/course-tracking/assign")
+def assign_course(data: AssignCourseRequest):
+    db = SessionLocal()
+
+    emp = db.query(Employee).filter(Employee.id == data.employee_id).first()
+    if not emp:
+        db.close()
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    # Prevent duplicate active assignment for same course
+    existing = db.query(CourseTracking).filter(
+        CourseTracking.employee_id == data.employee_id,
+        CourseTracking.course_name == data.course_name,
+        CourseTracking.status != "Completed"
+    ).first()
+    if existing:
+        db.close()
+        raise HTTPException(status_code=400, detail="Course already assigned and not yet completed")
+
+    assigned = date.today()
+    deadline = assigned + timedelta(days=data.duration_days)
+
+    record = CourseTracking(
+        employee_id      = data.employee_id,
+        employee_name    = emp.name,
+        course_name      = data.course_name,
+        assigned_date    = assigned,
+        deadline_date    = deadline,
+        completion_date  = None,
+        status           = "In Progress",
+        progress_percent = 0.0
+    )
+    db.add(record)
+    db.commit()
+    db.close()
+    return {"message": f"Course '{data.course_name}' assigned to {emp.name}. Deadline: {deadline}"}
+
+
+# ── Get all course tracking records ──────────────────────────────
+
+@router.get("/course-tracking")
+def get_all_course_tracking():
+    db = SessionLocal()
+    records = db.query(CourseTracking).all()
+
+    # Auto-update overdue status on the fly
+    result = []
+    for r in records:
+        status = compute_status(r.deadline_date, r.completion_date, r.progress_percent)
+        result.append({
+            "id":               r.id,
+            "employee_id":      r.employee_id,
+            "employee_name":    r.employee_name,
+            "course_name":      r.course_name,
+            "assigned_date":    str(r.assigned_date),
+            "deadline_date":    str(r.deadline_date),
+            "completion_date":  str(r.completion_date) if r.completion_date else None,
+            "status":           status,
+            "progress_percent": r.progress_percent,
+            "days_remaining":   max((r.deadline_date - date.today()).days, 0) if not r.completion_date else 0
+        })
+
+    db.close()
+    return result
+
+
+# ── Get course tracking for a specific employee ───────────────────
+
+@router.get("/course-tracking/employee/{employee_id}")
+def get_employee_courses(employee_id: int):
+    db = SessionLocal()
+    records = db.query(CourseTracking).filter(
+        CourseTracking.employee_id == employee_id
+    ).all()
+
+    result = []
+    for r in records:
+        status = compute_status(r.deadline_date, r.completion_date, r.progress_percent)
+        result.append({
+            "id":               r.id,
+            "course_name":      r.course_name,
+            "assigned_date":    str(r.assigned_date),
+            "deadline_date":    str(r.deadline_date),
+            "completion_date":  str(r.completion_date) if r.completion_date else None,
+            "status":           status,
+            "progress_percent": r.progress_percent,
+            "days_remaining":   max((r.deadline_date - date.today()).days, 0) if not r.completion_date else 0
+        })
+
+    db.close()
+    return result
+
+
+# ── Update progress % ─────────────────────────────────────────────
+
+@router.patch("/course-tracking/{record_id}/progress")
+def update_progress(record_id: int, data: UpdateProgressRequest):
+    db = SessionLocal()
+    record = db.query(CourseTracking).filter(CourseTracking.id == record_id).first()
+    if not record:
+        db.close()
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    record.progress_percent = max(0.0, min(100.0, data.progress_percent))
+    record.status = compute_status(record.deadline_date, record.completion_date, record.progress_percent)
+    db.commit()
+    db.close()
+    return {"message": "Progress updated", "progress_percent": record.progress_percent}
+
+
+# ── Mark course as completed ──────────────────────────────────────
+
+@router.patch("/course-tracking/{record_id}/complete")
+def complete_course(record_id: int, data: CompleteCourseRequest):
+    db = SessionLocal()
+    record = db.query(CourseTracking).filter(CourseTracking.id == record_id).first()
+    if not record:
+        db.close()
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    record.completion_date  = date.fromisoformat(data.completion_date)
+    record.progress_percent = 100.0
+    record.status           = "Completed"
+    db.commit()
+    db.close()
+    return {"message": f"Course '{record.course_name}' marked as completed"}
+
+
+# ── Delete a tracking record ──────────────────────────────────────
+
+@router.delete("/course-tracking/{record_id}")
+def delete_course_record(record_id: int):
+    db = SessionLocal()
+    record = db.query(CourseTracking).filter(CourseTracking.id == record_id).first()
+    if not record:
+        db.close()
+        raise HTTPException(status_code=404, detail="Record not found")
+    db.delete(record)
+    db.commit()
+    db.close()
+    return {"message": "Course tracking record deleted"}

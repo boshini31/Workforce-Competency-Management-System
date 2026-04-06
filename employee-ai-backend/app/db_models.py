@@ -22,3 +22,17 @@ class User(Base):
     name = Column(String)
     email = Column(String, unique=True, index=True)
     password = Column(String)  # stored as sha256 hash
+
+# ✅ NEW: Course Tracking model
+class CourseTracking(Base):
+    __tablename__ = "course_tracking"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(Integer, index=True)          # FK to employees.id
+    employee_name = Column(String)
+    course_name = Column(String)
+    assigned_date = Column(Date)
+    deadline_date = Column(Date)
+    completion_date = Column(Date, nullable=True)       # NULL = not yet done
+    status = Column(String, default="In Progress")     # In Progress / Completed / Overdue
+    progress_percent = Column(Float, default=0.0)  
