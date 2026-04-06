@@ -34,6 +34,21 @@
         .badge-medium { background: #fff3cd; color: #856404; }
         .badge-low    { background: #f8d7da; color: #721c24; }
         #recordCount  { font-size: 13px; color: #555; margin-bottom: 8px; }
+
+        /* ── Pagination ── */
+        .pagination {
+            display: flex; justify-content: center; align-items: center;
+            gap: 6px; margin-top: 18px; flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 6px 12px; border: 1px solid #ccc; background: white;
+            border-radius: 5px; cursor: pointer; font-size: 13px; color: #333;
+            min-width: 36px; text-align: center;
+        }
+        .page-btn:hover { background: #e8eef8; border-color: #3f6db3; color: #3f6db3; }
+        .page-btn.active { background: #3f6db3; color: white; border-color: #3f6db3; font-weight: bold; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .page-info { font-size: 13px; color: #666; margin: 0 8px; }
     </style>
 </head>
 <body>
@@ -50,12 +65,12 @@
 
 <div class="container">
     <div class="filter-row">
-        <button class="filter-btn active" id="btn-all"        onclick="filterData('all',        this)">All</button>
-        <button class="filter-btn"        id="btn-weekly"     onclick="filterData('weekly',     this)">Weekly</button>
-        <button class="filter-btn"        id="btn-quarterly"  onclick="filterData('quarterly',  this)">Quarterly</button>
-        <button class="filter-btn"        id="btn-halfyearly" onclick="filterData('halfyearly', this)">Half Yearly</button>
-        <button class="filter-btn"        id="btn-yearly"     onclick="filterData('yearly',     this)">Yearly</button>
-        <input  class="search-input" id="searchBox" placeholder="Search name or skill..." oninput="applySearch()">
+        <button class="filter-btn active" onclick="filterData('all',        this)">All</button>
+        <button class="filter-btn"        onclick="filterData('weekly',     this)">Weekly</button>
+        <button class="filter-btn"        onclick="filterData('quarterly',  this)">Quarterly</button>
+        <button class="filter-btn"        onclick="filterData('halfyearly', this)">Half Yearly</button>
+        <button class="filter-btn"        onclick="filterData('yearly',     this)">Yearly</button>
+        <input class="search-input" id="searchBox" placeholder="Search name or skill..." oninput="applySearch()">
         <a href="dashboard.html" class="back-btn">⬅ Back</a>
     </div>
 
@@ -74,47 +89,57 @@
         </thead>
         <tbody id="employeeTable"></tbody>
     </table>
+
+    <div class="pagination" id="pagination"></div>
 </div>
 
 <script>
-const API = "https://workforce-competency-management-system.onrender.com";
+const API        = "https://workforce-competency-management-system.onrender.com";
+const PAGE_SIZE  = 10;
 
-// Guard
-if(!localStorage.getItem("loggedInUser")){
-    window.location.href = "login.html";
-}
+if (!localStorage.getItem("loggedInUser")) window.location.href = "login.html";
 
-let allData     = [];
-let currentType = 'all';
+let allData      = [];
+let filteredData = [];
+let currentPage  = 1;
 
-window.onload = async function(){
-    // Try backend first, fallback to localStorage
+window.onload = async function () {
     try {
         const res = await fetch(`${API}/employees`);
-        allData   = await res.json();
+        allData = await res.json();
         localStorage.setItem("employeeData", JSON.stringify(allData));
-    } catch(e) {
+    } catch (e) {
         allData = JSON.parse(localStorage.getItem("employeeData")) || [];
     }
-    loadTable(allData);
-}
+    filteredData = allData;
+    renderPage(1);
+};
 
-// ✅ Correct column names: name, skill, category, project, course
-function loadTable(data){
-    const table = document.getElementById("employeeTable");
-    table.innerHTML = "";
-    document.getElementById("recordCount").textContent = `Showing ${data.length} record(s)`;
+function renderPage(page) {
+    currentPage = page;
+    const total = filteredData.length;
+    const start = (page - 1) * PAGE_SIZE;
+    const end   = Math.min(start + PAGE_SIZE, total);
+    const slice = filteredData.slice(start, end);
 
-    if(data.length === 0){
-        table.innerHTML = `<tr><td colspan="6" style="color:#999;padding:20px;">No records found.</td></tr>`;
+    const tbody = document.getElementById("employeeTable");
+    tbody.innerHTML = "";
+
+    document.getElementById("recordCount").textContent =
+        total === 0 ? "No records found." :
+        `Showing ${start + 1}–${end} of ${total} record(s)`;
+
+    if (total === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="color:#999;padding:20px;">No records found.</td></tr>`;
+        document.getElementById("pagination").innerHTML = "";
         return;
     }
 
-    data.forEach((emp, i) => {
+    slice.forEach((emp, i) => {
         const cat        = (emp.category || "").toLowerCase();
         const badgeClass = cat === "high" ? "badge-high" : cat === "medium" ? "badge-medium" : "badge-low";
-        table.innerHTML += `<tr>
-            <td>${i + 1}</td>
+        tbody.innerHTML += `<tr>
+            <td>${start + i + 1}</td>
             <td>${emp.name     || "-"}</td>
             <td>${emp.skill    || "-"}</td>
             <td><span class="badge ${badgeClass}">${emp.category || "-"}</span></td>
@@ -122,29 +147,86 @@ function loadTable(data){
             <td>${emp.course   || "-"}</td>
         </tr>`;
     });
+
+    renderPagination(total, page);
 }
 
-function filterData(type, btn){
-    currentType = type;
+function renderPagination(total, current) {
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+    const pag = document.getElementById("pagination");
+    pag.innerHTML = "";
 
-    // Update active button style
+    if (totalPages <= 1) return;
+
+    // Prev button
+    const prev = document.createElement("button");
+    prev.className = "page-btn";
+    prev.textContent = "‹ Prev";
+    prev.disabled = current === 1;
+    prev.onclick = () => renderPage(current - 1);
+    pag.appendChild(prev);
+
+    // Page number buttons (show max 5 around current)
+    let startP = Math.max(1, current - 2);
+    let endP   = Math.min(totalPages, startP + 4);
+    if (endP - startP < 4) startP = Math.max(1, endP - 4);
+
+    if (startP > 1) {
+        pag.appendChild(pageBtn(1, current));
+        if (startP > 2) pag.appendChild(ellipsis());
+    }
+
+    for (let p = startP; p <= endP; p++) pag.appendChild(pageBtn(p, current));
+
+    if (endP < totalPages) {
+        if (endP < totalPages - 1) pag.appendChild(ellipsis());
+        pag.appendChild(pageBtn(totalPages, current));
+    }
+
+    // Next button
+    const next = document.createElement("button");
+    next.className = "page-btn";
+    next.textContent = "Next ›";
+    next.disabled = current === totalPages;
+    next.onclick = () => renderPage(current + 1);
+    pag.appendChild(next);
+
+    // Page info
+    const info = document.createElement("span");
+    info.className = "page-info";
+    info.textContent = `Page ${current} of ${totalPages}`;
+    pag.appendChild(info);
+}
+
+function pageBtn(p, current) {
+    const btn = document.createElement("button");
+    btn.className = "page-btn" + (p === current ? " active" : "");
+    btn.textContent = p;
+    btn.onclick = () => renderPage(p);
+    return btn;
+}
+
+function ellipsis() {
+    const span = document.createElement("span");
+    span.textContent = "…";
+    span.style.cssText = "padding:6px 4px;color:#999;font-size:13px;";
+    return span;
+}
+
+function filterData(type, btn) {
     document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-    if(btn) btn.classList.add("active");
-
+    if (btn) btn.classList.add("active");
     applySearch();
 }
 
-function applySearch(){
+function applySearch() {
     const q = document.getElementById("searchBox").value.toLowerCase();
-
-    const filtered = allData.filter(emp => {
-        const matchSearch = !q ||
-            (emp.name  || "").toLowerCase().includes(q) ||
-            (emp.skill || "").toLowerCase().includes(q);
-        return matchSearch;
-    });
-
-    loadTable(filtered);
+    filteredData = allData.filter(emp =>
+        !q ||
+        (emp.name  || "").toLowerCase().includes(q) ||
+        (emp.skill || "").toLowerCase().includes(q)
+    );
+    renderPage(1);
 }
 </script>
 

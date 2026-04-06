@@ -3,137 +3,67 @@
 <head>
     <title>Admin</title>
     <style>
-        body{
-            font-family: Arial;
-            margin:0;
-            background:#f4f6f9;
-        }
-        .topnav{
-            background:white;
-            padding:15px 30px;
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
+        body { font-family: Arial; margin:0; background:#f4f6f9; }
+        .topnav {
+            background:white; padding:15px 30px;
+            display:flex; justify-content:space-between; align-items:center;
             box-shadow:0 2px 5px rgba(0,0,0,0.1);
         }
-        .menu a{
-            margin-left:20px;
-            text-decoration:none;
-            color:black;
-            font-weight:bold;
+        .menu a { margin-left:20px; text-decoration:none; color:black; font-weight:bold; }
+        .menu a.active { background:#2c5aa0; color:white; padding:5px 10px; border-radius:5px; }
+        .container { margin:30px; background:white; padding:20px; border-radius:10px; box-shadow:0 0 5px rgba(0,0,0,0.1); }
+        .form-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:15px; }
+        .form-row input, .form-row select {
+            padding:8px 12px; border:1px solid #ccc; border-radius:5px; font-size:14px;
         }
-        .menu a.active{
-            background:#2c5aa0;
-            color:white;
-            padding:5px 10px;
-            border-radius:5px;
+        .btn {
+            padding:8px 18px; background:#2c5aa0; color:white;
+            border:none; border-radius:5px; cursor:pointer; font-size:14px;
         }
-        .container{
-            margin:30px;
-            background:white;
-            padding:20px;
-            border-radius:10px;
-            box-shadow:0 0 5px rgba(0,0,0,0.1);
+        .btn:hover { background:#1e3f73; }
+        .btn-danger {
+            background:#dc3545; padding:5px 12px; color:white;
+            border:none; border-radius:4px; cursor:pointer; font-size:13px;
         }
-        .form-row{
-            display:flex;
-            flex-wrap:wrap;
-            gap:8px;
-            align-items:center;
-            margin-bottom:15px;
+        .btn-danger:hover { background:#b02a37; }
+        .back-btn {
+            padding:8px 15px; background:#ccc; color:#333;
+            border-radius:5px; text-decoration:none; font-size:14px;
         }
-        .form-row input, .form-row select{
-            padding:8px 12px;
-            border:1px solid #ccc;
-            border-radius:5px;
-            font-size:14px;
+        table { width:100%; border-collapse:collapse; margin-top:10px; font-size:14px; }
+        th { background:#2c5aa0; color:white; padding:10px; text-align:center; }
+        td { padding:10px; border-bottom:1px solid #ddd; text-align:center; }
+        tr:hover { background:#f0f4ff; }
+        .badge { display:inline-block; padding:3px 10px; border-radius:10px; font-size:12px; font-weight:bold; }
+        .badge-high   { background:#d4edda; color:#155724; }
+        .badge-medium { background:#fff3cd; color:#856404; }
+        .badge-low    { background:#f8d7da; color:#721c24; }
+        #toast {
+            display:none; position:fixed; bottom:30px; right:30px;
+            background:#333; color:white; padding:12px 20px;
+            border-radius:8px; font-size:14px; z-index:999;
         }
-        .btn{
-            padding:8px 18px;
-            background:#2c5aa0;
-            color:white;
-            border:none;
-            border-radius:5px;
-            cursor:pointer;
-            font-size:14px;
+        #recordCount { font-size:13px; color:#555; margin-bottom:8px; }
+        .search-row { display:flex; gap:10px; margin-bottom:12px; align-items:center; }
+        .search-row input {
+            padding:8px 12px; border:1px solid #ccc;
+            border-radius:5px; font-size:14px; width:250px;
         }
-        .btn:hover{ background:#1e3f73; }
-        .btn-danger{
-            background:#dc3545;
-            padding:5px 12px;
-            color:white;
-            border:none;
-            border-radius:4px;
-            cursor:pointer;
-            font-size:13px;
+
+        /* ── Pagination ── */
+        .pagination {
+            display:flex; justify-content:center; align-items:center;
+            gap:6px; margin-top:18px; flex-wrap:wrap;
         }
-        .btn-danger:hover{ background:#b02a37; }
-        .back-btn{
-            padding:8px 15px;
-            background:#ccc;
-            color:#333;
-            border-radius:5px;
-            text-decoration:none;
-            font-size:14px;
+        .page-btn {
+            padding:6px 12px; border:1px solid #ccc; background:white;
+            border-radius:5px; cursor:pointer; font-size:13px; color:#333;
+            min-width:36px; text-align:center;
         }
-        table{
-            width:100%;
-            border-collapse:collapse;
-            margin-top:10px;
-            font-size:14px;
-        }
-        th{
-            background:#2c5aa0;
-            color:white;
-            padding:10px;
-            text-align:center;
-        }
-        td{
-            padding:10px;
-            border-bottom:1px solid #ddd;
-            text-align:center;
-        }
-        tr:hover{ background:#f0f4ff; }
-        .badge{
-            display:inline-block;
-            padding:3px 10px;
-            border-radius:10px;
-            font-size:12px;
-            font-weight:bold;
-        }
-        .badge-high{ background:#d4edda; color:#155724; }
-        .badge-medium{ background:#fff3cd; color:#856404; }
-        .badge-low{ background:#f8d7da; color:#721c24; }
-        #toast{
-            display:none;
-            position:fixed;
-            bottom:30px;
-            right:30px;
-            background:#333;
-            color:white;
-            padding:12px 20px;
-            border-radius:8px;
-            font-size:14px;
-            z-index:999;
-        }
-        #recordCount{
-            font-size:13px;
-            color:#555;
-            margin-bottom:8px;
-        }
-        .search-row{
-            display:flex;
-            gap:10px;
-            margin-bottom:12px;
-            align-items:center;
-        }
-        .search-row input{
-            padding:8px 12px;
-            border:1px solid #ccc;
-            border-radius:5px;
-            font-size:14px;
-            width:250px;
-        }
+        .page-btn:hover { background:#e8eef8; border-color:#2c5aa0; color:#2c5aa0; }
+        .page-btn.active { background:#2c5aa0; color:white; border-color:#2c5aa0; font-weight:bold; }
+        .page-btn:disabled { opacity:0.4; cursor:not-allowed; }
+        .page-info { font-size:13px; color:#666; margin:0 8px; }
     </style>
 </head>
 <body>
@@ -151,11 +81,10 @@
 
 <div class="container">
 
-    <!-- ADD EMPLOYEE FORM -->
     <h3>Add Employee</h3>
     <div class="form-row">
-        <input type="text"   id="inp-name"     placeholder="Name">
-        <input type="text"   id="inp-skill"    placeholder="Skill (e.g. python, java)">
+        <input type="text"   id="inp-name"  placeholder="Name">
+        <input type="text"   id="inp-skill" placeholder="Skill (e.g. python, java)">
         <select id="inp-grade">
             <option value="">Grade</option>
             <option value="G3">G3</option>
@@ -163,16 +92,15 @@
             <option value="G5">G5</option>
             <option value="G6">G6</option>
         </select>
-        <input type="number" id="inp-bench"    placeholder="Bench Days" min="0">
+        <input type="number" id="inp-bench" placeholder="Bench Days" min="0">
         <button class="btn" onclick="addEmployee()">Add</button>
         <a href="dashboard.html" class="back-btn">⬅ Back</a>
     </div>
-    <p id="addMsg" style="font-size:13px; margin:0;"></p>
+    <p id="addMsg" style="font-size:13px;margin:0;"></p>
 
-    <!-- EMPLOYEE LIST -->
-    <h3>Employee List</h3>
+    <h3 style="margin-top:24px;">Employee List</h3>
     <div class="search-row">
-        <input type="text" id="searchBox" placeholder="Search by name or skill..." oninput="filterTable()">
+        <input type="text" id="searchBox" placeholder="Search by name or skill..." oninput="applyFilter()">
         <button class="btn" onclick="loadEmployees()" style="background:#28a745;">↻ Refresh</button>
     </div>
     <p id="recordCount"></p>
@@ -191,147 +119,198 @@
         </thead>
         <tbody id="adminTable"></tbody>
     </table>
+
+    <div class="pagination" id="pagination"></div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-const API = "https://workforce-competency-management-system.onrender.com";
+const API       = "https://workforce-competency-management-system.onrender.com";
+const PAGE_SIZE = 10;
 
-// ✅ Guard: redirect if not logged in
-if(!localStorage.getItem("loggedInUser")){
-    window.location.href = "login.html";
-}
+if (!localStorage.getItem("loggedInUser")) window.location.href = "login.html";
 
-let allEmployees = [];
+let allEmployees      = [];
+let filteredEmployees = [];
+let currentPage       = 1;
 
-window.onload = function(){
-    loadEmployees();
-}
+window.onload = function () { loadEmployees(); };
 
-// ✅ Load from backend API (falls back to localStorage if offline)
-async function loadEmployees(){
+async function loadEmployees() {
     try {
         const res  = await fetch(`${API}/employees`);
         const data = await res.json();
         allEmployees = data;
         localStorage.setItem("employeeData", JSON.stringify(data));
-    } catch(e) {
-        // Fallback to localStorage if backend unreachable
+    } catch (e) {
         allEmployees = JSON.parse(localStorage.getItem("employeeData")) || [];
         showToast("Using cached data — backend may be offline");
     }
-    renderTable(allEmployees);
+    filteredEmployees = allEmployees;
+    renderPage(1);
 }
 
-// ✅ Render table with correct backend column names: name, skill, category, project, course
-function renderTable(data){
-    const table = document.getElementById("adminTable");
-    table.innerHTML = "";
-    document.getElementById("recordCount").textContent = `Showing ${data.length} employee(s)`;
+function renderPage(page) {
+    currentPage = page;
+    const total = filteredEmployees.length;
+    const start = (page - 1) * PAGE_SIZE;
+    const end   = Math.min(start + PAGE_SIZE, total);
+    const slice = filteredEmployees.slice(start, end);
 
-    if(data.length === 0){
-        table.innerHTML = `<tr><td colspan="7" style="color:#999;padding:20px;">No employees found.</td></tr>`;
+    const tbody = document.getElementById("adminTable");
+    tbody.innerHTML = "";
+
+    document.getElementById("recordCount").textContent =
+        total === 0 ? "No employees found." :
+        `Showing ${start + 1}–${end} of ${total} employee(s)`;
+
+    if (total === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="color:#999;padding:20px;">No employees found.</td></tr>`;
+        document.getElementById("pagination").innerHTML = "";
         return;
     }
 
-    data.forEach((emp, index) => {
+    slice.forEach((emp, i) => {
         const cat        = (emp.category || "").toLowerCase();
         const badgeClass = cat === "high" ? "badge-high" : cat === "medium" ? "badge-medium" : "badge-low";
-
-        table.innerHTML += `
-        <tr>
-            <td>${index + 1}</td>
-            <td>${emp.name     || "-"}</td>
-            <td>${emp.skill    || "-"}</td>
+        tbody.innerHTML += `<tr>
+            <td>${start + i + 1}</td>
+            <td>${emp.name    || "-"}</td>
+            <td>${emp.skill   || "-"}</td>
             <td><span class="badge ${badgeClass}">${emp.category || "-"}</span></td>
-            <td>${emp.project  || "-"}</td>
-            <td>${emp.course   || "-"}</td>
+            <td>${emp.project || "-"}</td>
+            <td>${emp.course  || "-"}</td>
             <td><button class="btn-danger" onclick="deleteEmp(${emp.id}, this)">Delete</button></td>
         </tr>`;
     });
+
+    renderPagination(total, page);
 }
 
-// ✅ Search filter
-function filterTable(){
+function renderPagination(total, current) {
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+    const pag = document.getElementById("pagination");
+    pag.innerHTML = "";
+    if (totalPages <= 1) return;
+
+    const prev = document.createElement("button");
+    prev.className = "page-btn";
+    prev.textContent = "‹ Prev";
+    prev.disabled = current === 1;
+    prev.onclick = () => renderPage(current - 1);
+    pag.appendChild(prev);
+
+    let startP = Math.max(1, current - 2);
+    let endP   = Math.min(totalPages, startP + 4);
+    if (endP - startP < 4) startP = Math.max(1, endP - 4);
+
+    if (startP > 1) { pag.appendChild(pageBtn(1, current)); if (startP > 2) pag.appendChild(ellipsis()); }
+    for (let p = startP; p <= endP; p++) pag.appendChild(pageBtn(p, current));
+    if (endP < totalPages) { if (endP < totalPages - 1) pag.appendChild(ellipsis()); pag.appendChild(pageBtn(totalPages, current)); }
+
+    const next = document.createElement("button");
+    next.className = "page-btn";
+    next.textContent = "Next ›";
+    next.disabled = current === totalPages;
+    next.onclick = () => renderPage(current + 1);
+    pag.appendChild(next);
+
+    const info = document.createElement("span");
+    info.className = "page-info";
+    info.textContent = `Page ${current} of ${totalPages}`;
+    pag.appendChild(info);
+}
+
+function pageBtn(p, current) {
+    const btn = document.createElement("button");
+    btn.className = "page-btn" + (p === current ? " active" : "");
+    btn.textContent = p;
+    btn.onclick = () => renderPage(p);
+    return btn;
+}
+
+function ellipsis() {
+    const span = document.createElement("span");
+    span.textContent = "…";
+    span.style.cssText = "padding:6px 4px;color:#999;font-size:13px;";
+    return span;
+}
+
+function applyFilter() {
     const q = document.getElementById("searchBox").value.toLowerCase();
-    const filtered = allEmployees.filter(e =>
+    filteredEmployees = allEmployees.filter(e =>
         (e.name  || "").toLowerCase().includes(q) ||
         (e.skill || "").toLowerCase().includes(q)
     );
-    renderTable(filtered);
+    renderPage(1);
 }
 
-// ✅ Add employee — calls backend POST /upload with a single-row approach via /add-employee
-async function addEmployee(){
+async function addEmployee() {
     const name  = document.getElementById("inp-name").value.trim();
     const skill = document.getElementById("inp-skill").value.trim();
     const grade = document.getElementById("inp-grade").value;
     const bench = document.getElementById("inp-bench").value;
     const msg   = document.getElementById("addMsg");
 
-    if(!name || !skill || !grade || !bench){
+    if (!name || !skill || !grade || !bench) {
         msg.style.color = "red";
         msg.textContent = "Please fill all fields.";
         return;
     }
 
     try {
-        const res = await fetch(`${API}/add-employee`, {
+        const res  = await fetch(`${API}/add-employee`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, skill, grade, bench_days: Number(bench) })
         });
         const data = await res.json();
 
-        if(res.ok){
+        if (res.ok) {
             msg.style.color = "green";
             msg.textContent = data.message || "Employee added!";
-            // Clear fields
             document.getElementById("inp-name").value  = "";
             document.getElementById("inp-skill").value = "";
             document.getElementById("inp-grade").value = "";
             document.getElementById("inp-bench").value = "";
-            loadEmployees(); // refresh table
+            loadEmployees();
         } else {
             msg.style.color = "red";
             msg.textContent = data.detail || "Failed to add employee.";
         }
-    } catch(e){
+    } catch (e) {
         msg.style.color = "red";
         msg.textContent = "Cannot reach server.";
     }
 }
 
-// ✅ Delete employee — calls backend DELETE /employees/{id}
-async function deleteEmp(id, btn){
-    if(!confirm("Are you sure you want to delete this employee?")) return;
-
-    btn.disabled    = true;
+async function deleteEmp(id, btn) {
+    if (!confirm("Are you sure you want to delete this employee?")) return;
+    btn.disabled = true;
     btn.textContent = "...";
-
     try {
         const res = await fetch(`${API}/employees/${id}`, { method: "DELETE" });
-        if(res.ok){
+        if (res.ok) {
             showToast("Employee deleted.");
             loadEmployees();
         } else {
             const data = await res.json();
             showToast("Error: " + (data.detail || "Delete failed"));
-            btn.disabled    = false;
+            btn.disabled = false;
             btn.textContent = "Delete";
         }
-    } catch(e){
+    } catch (e) {
         showToast("Cannot reach server.");
-        btn.disabled    = false;
+        btn.disabled = false;
         btn.textContent = "Delete";
     }
 }
 
-function showToast(msg){
+function showToast(msg) {
     const t = document.getElementById("toast");
-    t.textContent    = msg;
-    t.style.display  = "block";
+    t.textContent = msg;
+    t.style.display = "block";
     setTimeout(() => t.style.display = "none", 3000);
 }
 </script>

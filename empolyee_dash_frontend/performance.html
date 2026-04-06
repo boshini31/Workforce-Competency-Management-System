@@ -120,6 +120,22 @@
             display: flex; gap: 25px; flex-wrap: wrap; margin-bottom: 25px;
         }
 
+        /* ── Pagination ── */
+        .pagination {
+            display: flex; justify-content: center; align-items: center;
+            gap: 6px; padding: 16px; flex-wrap: wrap;
+            border-top: 1px solid #eee;
+        }
+        .page-btn {
+            padding: 6px 12px; border: 1px solid #ccc; background: white;
+            border-radius: 5px; cursor: pointer; font-size: 13px; color: #333;
+            min-width: 36px; text-align: center;
+        }
+        .page-btn:hover { background: #e8eef8; border-color: #3f6db3; color: #3f6db3; }
+        .page-btn.active { background: #3f6db3; color: white; border-color: #3f6db3; font-weight: bold; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .page-info { font-size: 13px; color: #666; margin: 0 8px; }
+
         .back-btn {
             padding: 8px 15px; background: #ccc; color: #333;
             border-radius: 5px; text-decoration: none; font-size: 13px;
@@ -225,6 +241,7 @@
             </thead>
             <tbody id="courseTable"></tbody>
         </table>
+        <div class="pagination" id="coursePagination"></div>
     </div>
 
 </div><!-- /page -->
@@ -366,6 +383,10 @@ function loadCourseCharts(data) {
 /* ─────────────────────────────────────────────
    COURSE TABLE
 ───────────────────────────────────────────── */
+const COURSE_PAGE_SIZE = 10;
+let courseCurrentPage  = 1;
+let courseFiltered     = [];
+
 function filterCourses(status, btn) {
     activeCourseFilter = status;
     document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
@@ -376,49 +397,47 @@ function filterCourses(status, btn) {
 function renderCourseTable() {
     const q = (document.getElementById("courseSearch").value || "").toLowerCase();
 
-    let data = allCourseData;
+    courseFiltered = allCourseData;
+    if (activeCourseFilter !== "all") courseFiltered = courseFiltered.filter(r => r.status === activeCourseFilter);
+    if (q) courseFiltered = courseFiltered.filter(r =>
+        (r.employee_name || "").toLowerCase().includes(q) ||
+        (r.course_name   || "").toLowerCase().includes(q)
+    );
 
-    // Status filter
-    if (activeCourseFilter !== "all") {
-        data = data.filter(r => r.status === activeCourseFilter);
-    }
+    renderCoursePage(1);
+}
 
-    // Search filter
-    if (q) {
-        data = data.filter(r =>
-            (r.employee_name || "").toLowerCase().includes(q) ||
-            (r.course_name   || "").toLowerCase().includes(q)
-        );
-    }
+function renderCoursePage(page) {
+    courseCurrentPage = page;
+    const total = courseFiltered.length;
+    const start = (page - 1) * COURSE_PAGE_SIZE;
+    const end   = Math.min(start + COURSE_PAGE_SIZE, total);
+    const slice = courseFiltered.slice(start, end);
 
     const tbody = document.getElementById("courseTable");
     tbody.innerHTML = "";
 
-    if (!data.length) {
+    if (!total) {
         tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#999;padding:20px;">No records found.</td></tr>`;
+        document.getElementById("coursePagination").innerHTML = "";
         return;
     }
 
-    data.forEach((r, i) => {
+    slice.forEach((r, i) => {
         const statusClass =
-            r.status === "Completed"  ? "badge-completed"  :
-            r.status === "Overdue"    ? "badge-overdue"    : "badge-inprogress";
-
+            r.status === "Completed" ? "badge-completed"  :
+            r.status === "Overdue"   ? "badge-overdue"    : "badge-inprogress";
         const fillColor =
             r.status === "Completed" ? "#28a745" :
             r.status === "Overdue"   ? "#dc3545" : "#3f6db3";
-
         const daysClass =
-            r.status === "Completed" ? "done" :
-            r.status === "Overdue"   ? "late" : "";
-
+            r.status === "Completed" ? "done" : r.status === "Overdue" ? "late" : "";
         const daysLabel =
             r.status === "Completed" ? "Done" :
-            r.status === "Overdue"   ? "Overdue" :
-            `${r.days_remaining}d left`;
+            r.status === "Overdue"   ? "Overdue" : `${r.days_remaining}d left`;
 
         tbody.innerHTML += `<tr>
-            <td>${i + 1}</td>
+            <td>${start + i + 1}</td>
             <td>${r.employee_name || "—"}</td>
             <td>${r.course_name   || "—"}</td>
             <td>${r.assigned_date || "—"}</td>
@@ -434,6 +453,54 @@ function renderCourseTable() {
             <td>${r.completion_date || "—"}</td>
         </tr>`;
     });
+
+    renderCoursePagination(total, page);
+}
+
+function renderCoursePagination(total, current) {
+    const totalPages = Math.ceil(total / COURSE_PAGE_SIZE);
+    const pag = document.getElementById("coursePagination");
+    pag.innerHTML = "";
+    if (totalPages <= 1) return;
+
+    const prev = document.createElement("button");
+    prev.className = "page-btn"; prev.textContent = "‹ Prev";
+    prev.disabled = current === 1;
+    prev.onclick = () => renderCoursePage(current - 1);
+    pag.appendChild(prev);
+
+    let startP = Math.max(1, current - 2);
+    let endP   = Math.min(totalPages, startP + 4);
+    if (endP - startP < 4) startP = Math.max(1, endP - 4);
+
+    if (startP > 1) { pag.appendChild(cPageBtn(1, current)); if (startP > 2) pag.appendChild(cEllipsis()); }
+    for (let p = startP; p <= endP; p++) pag.appendChild(cPageBtn(p, current));
+    if (endP < totalPages) { if (endP < totalPages - 1) pag.appendChild(cEllipsis()); pag.appendChild(cPageBtn(totalPages, current)); }
+
+    const next = document.createElement("button");
+    next.className = "page-btn"; next.textContent = "Next ›";
+    next.disabled = current === totalPages;
+    next.onclick = () => renderCoursePage(current + 1);
+    pag.appendChild(next);
+
+    const info = document.createElement("span");
+    info.className = "page-info";
+    info.textContent = `Page ${current} of ${totalPages} · ${total} record(s)`;
+    pag.appendChild(info);
+}
+
+function cPageBtn(p, current) {
+    const btn = document.createElement("button");
+    btn.className = "page-btn" + (p === current ? " active" : "");
+    btn.textContent = p;
+    btn.onclick = () => renderCoursePage(p);
+    return btn;
+}
+
+function cEllipsis() {
+    const s = document.createElement("span");
+    s.textContent = "…"; s.style.cssText = "padding:6px 4px;color:#999;font-size:13px;";
+    return s;
 }
 </script>
 
