@@ -243,6 +243,7 @@ def assign_course(data: AssignCourseRequest):
     )
     db.add(record)
     db.commit()
+    emp_name = emp.name
     db.close()
     return {"message": f"Course '{data.course_name}' assigned to {emp.name}. Deadline: {deadline}"}
 
