@@ -350,3 +350,47 @@ def delete_course_record(record_id: int):
     db.commit()
     db.close()
     return {"message": "Course tracking record deleted"}
+
+# ── One-time migration: seed course_tracking from existing employees ──
+@router.post("/course-tracking/seed-from-employees")
+def seed_course_tracking():
+    db = SessionLocal()
+    employees = db.query(Employee).all()
+    
+    added = 0
+    skipped = 0
+
+    for emp in employees:
+        if not emp.course:
+            skipped += 1
+            continue
+
+        # Skip if already tracked
+        existing = db.query(CourseTracking).filter(
+            CourseTracking.employee_id == emp.id,
+            CourseTracking.course_name == emp.course
+        ).first()
+
+        if existing:
+            skipped += 1
+            continue
+
+        assigned = date.today()
+        deadline = assigned + timedelta(days=30)  # default 30-day window
+
+        record = CourseTracking(
+            employee_id      = emp.id,
+            employee_name    = emp.name,
+            course_name      = emp.course,
+            assigned_date    = assigned,
+            deadline_date    = deadline,
+            completion_date  = None,
+            status           = "In Progress",
+            progress_percent = 0.0
+        )
+        db.add(record)
+        added += 1
+
+    db.commit()
+    db.close()
+    return {"message": f"Seeded {added} records, skipped {skipped}"}
