@@ -25,6 +25,9 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+class SelfCompleteRequest(BaseModel):
+    employee_name: str  
+
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -395,3 +398,69 @@ def seed_course_tracking():
     db.commit()
     db.close()
     return {"message": f"Seeded {added} records, skipped {skipped}"}
+
+# ─────────────────────────────────────────────
+# EMPLOYEE SELF-UPDATE PORTAL
+# ─────────────────────────────────────────────
+
+class SelfCompleteRequest(BaseModel):
+    employee_name: str   # employee types their name to identify themselves
+
+@router.get("/portal/my-courses")
+def get_my_courses(name: str):
+    """Employee looks up their assigned courses by name."""
+    db = SessionLocal()
+    name_clean = name.strip().lower()
+
+    records = db.query(CourseTracking).all()
+    matched = [r for r in records if r.employee_name.strip().lower() == name_clean]
+
+    result = []
+    for r in matched:
+        status = compute_status(r.deadline_date, r.completion_date, r.progress_percent)
+        result.append({
+            "id":               r.id,
+            "employee_name":    r.employee_name,
+            "course_name":      r.course_name,
+            "assigned_date":    str(r.assigned_date),
+            "deadline_date":    str(r.deadline_date),
+            "completion_date":  str(r.completion_date) if r.completion_date else None,
+            "status":           status,
+            "progress_percent": r.progress_percent,
+            "days_remaining":   max((r.deadline_date - date.today()).days, 0) if not r.completion_date else 0
+        })
+
+    db.close()
+
+    if not matched:
+        raise HTTPException(status_code=404, detail="No courses found for this name. Check spelling.")
+
+    return result
+
+
+@router.patch("/portal/complete/{record_id}")
+def self_complete_course(record_id: int, data: SelfCompleteRequest):
+    """Employee marks their own course as complete."""
+    db = SessionLocal()
+    record = db.query(CourseTracking).filter(CourseTracking.id == record_id).first()
+
+    if not record:
+        db.close()
+        raise HTTPException(status_code=404, detail="Course record not found")
+
+    # Security: only allow if name matches
+    if record.employee_name.strip().lower() != data.employee_name.strip().lower():
+        db.close()
+        raise HTTPException(status_code=403, detail="Name does not match. You can only complete your own courses.")
+
+    if record.status == "Completed":
+        db.close()
+        raise HTTPException(status_code=400, detail="Course is already marked as completed")
+
+    record.completion_date  = date.today()
+    record.progress_percent = 100.0
+    record.status           = "Completed"
+    db.commit()
+    db.close()
+
+    return {"message": f"✅ '{record.course_name}' marked as completed. Well done!"}
