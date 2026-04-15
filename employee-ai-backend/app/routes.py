@@ -488,7 +488,7 @@ def self_complete_course(record_id: int, data: SelfCompleteRequest):
 
     if record.status == "Completed":
         db.close()
-        raise HTTPException(status_code=400, detail="Course is already marked as completed")
+        return {"message": "Already completed"}
 
     record.completion_date  = date.today()
     record.progress_percent = 100.0
