@@ -38,7 +38,3 @@ class CourseTracking(Base):
     progress_percent = Column(Float, default=0.0)  
 
 
-class EmployeeCompleteRequest(Base):
-    
-    name: str
-
