@@ -36,3 +36,9 @@ class CourseTracking(Base):
     completion_date = Column(Date, nullable=True)       # NULL = not yet done
     status = Column(String, default="In Progress")     # In Progress / Completed / Overdue
     progress_percent = Column(Float, default=0.0)  
+
+
+class EmployeeCompleteRequest(Base):
+    
+    name: str
+

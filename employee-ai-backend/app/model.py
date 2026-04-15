@@ -28,3 +28,4 @@ def train_model():
 
 def load_model():
     return joblib.load(MODEL_PATH)
+
