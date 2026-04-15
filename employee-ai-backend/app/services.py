@@ -1,7 +1,8 @@
+from datetime import date, timedelta
 from app.model import load_model
-from app.utils import assign_project, recommend_course
+from app.utils import assign_project, recommend_course, course_duration_days
 from app.database import SessionLocal
-from app.db_models import Employee
+from app.db_models import Employee, CourseTracking
 
 model = load_model()
 
@@ -53,6 +54,24 @@ def process_data(df):
             course   = course
         )
         db.add(emp)
+        db.flush()  # get emp.id before commit
+
+        # Auto-create CourseTracking with AI-assigned duration
+        duration = course_duration_days(category)
+        assigned_dt = date.today()
+        deadline_dt = assigned_dt + timedelta(days=duration)
+
+        track = CourseTracking(
+            employee_id      = emp.id,
+            employee_name    = name,
+            course_name      = course,
+            assigned_date    = assigned_dt,
+            deadline_date    = deadline_dt,
+            completion_date  = None,
+            status           = "In Progress",
+            progress_percent = 0.0
+        )
+        db.add(track)
         added += 1
 
     db.commit()

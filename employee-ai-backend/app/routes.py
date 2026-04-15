@@ -160,10 +160,30 @@ def add_employee(data: AddEmployeeRequest):
         course   = course
     )
     db.add(emp)
+    db.flush()  # get emp.id
+
+    # Auto-create CourseTracking with AI-assigned duration
+    from app.utils import course_duration_days
+    from datetime import date, timedelta
+    duration    = course_duration_days(category)
+    assigned_dt = date.today()
+    deadline_dt = assigned_dt + timedelta(days=duration)
+
+    track = CourseTracking(
+        employee_id      = emp.id,
+        employee_name    = data.name,
+        course_name      = course,
+        assigned_date    = assigned_dt,
+        deadline_date    = deadline_dt,
+        completion_date  = None,
+        status           = "In Progress",
+        progress_percent = 0.0
+    )
+    db.add(track)
     db.commit()
     db.close()
 
-    return {"message": f"{data.name} added successfully as '{category}' — Project: {project}, Course: {course}"}
+    return {"message": f"{data.name} added as '{category}' — Project: {project}, Course: {course}, Deadline: {deadline_dt} ({duration}d)"}
 
 
 # ─────────────────────────────────────────────
@@ -358,6 +378,13 @@ def delete_course_record(record_id: int):
 # ── One-time migration: seed course_tracking from existing employees ──
 @router.post("/course-tracking/seed-from-employees")
 def seed_course_tracking():
+    """
+    One-time migration: seed CourseTracking for all existing employees
+    that don't yet have a tracking record.
+    Duration is AI-assigned based on skill category:
+      High → 21 days, Medium → 30 days, Low → 45 days
+    """
+    from app.utils import course_duration_days
     db = SessionLocal()
     employees = db.query(Employee).all()
     
@@ -379,15 +406,16 @@ def seed_course_tracking():
             skipped += 1
             continue
 
-        assigned = date.today()
-        deadline = assigned + timedelta(days=30)  # default 30-day window
+        duration    = course_duration_days(emp.category)
+        assigned_dt = date.today()
+        deadline_dt = assigned_dt + timedelta(days=duration)
 
         record = CourseTracking(
             employee_id      = emp.id,
             employee_name    = emp.name,
             course_name      = emp.course,
-            assigned_date    = assigned,
-            deadline_date    = deadline,
+            assigned_date    = assigned_dt,
+            deadline_date    = deadline_dt,
             completion_date  = None,
             status           = "In Progress",
             progress_percent = 0.0
@@ -397,7 +425,12 @@ def seed_course_tracking():
 
     db.commit()
     db.close()
-    return {"message": f"Seeded {added} records, skipped {skipped}"}
+    return {
+        "message": f"Seeded {added} records, skipped {skipped}",
+        "added": added,
+        "skipped": skipped,
+        "note": "Durations: High=21d, Medium=30d, Low=45d"
+    }
 
 # ─────────────────────────────────────────────
 # EMPLOYEE SELF-UPDATE PORTAL

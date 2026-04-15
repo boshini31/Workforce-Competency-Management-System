@@ -1,508 +1,378 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Performance & Course Tracking</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>Employee Course Portal</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+body { margin:0; font-family:Segoe UI; background:#eef2f7; }
 
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Topbar (matches dashboard.html exactly) ── */
+.topbar {
+  height:60px; background:#3f6db3; color:white;
+  display:flex; align-items:center; justify-content:space-between; padding:0 20px;
+}
+.topbar a { color:white; text-decoration:none; margin-left:15px; }
+.topbar h2 { margin:0; }
+.logout-btn {
+  background:#3f6db3; color:white; border:none;
+  padding:6px 12px; border-radius:5px; cursor:pointer; font-size:14px;
+}
+.logout-btn:hover { background:#2f5fa7; }
 
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f9;
-        }
+/* ── Layout ── */
+.container { display:flex; }
 
-        /* ── Topbar ── */
-        .topbar {
-            background: #3f6db3; color: white;
-            padding: 15px 25px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .topbar a { color: white; text-decoration: none; margin-left: 15px; }
+/* ── Sidebar (matches dashboard.html exactly) ── */
+.sidebar { width:200px; min-height:100vh; background:#2c5aa0; padding-top:20px; }
+.sidebar ul { list-style:none; padding:0; margin:0; }
+.sidebar ul li { padding:15px; }
+.sidebar ul li a { color:white; text-decoration:none; display:block; }
+.sidebar ul li:hover { background:#1e3f73; }
+.sidebar ul li.active { background:#1e3f73; }
 
-        /* ── Page wrapper ── */
-        .page { padding: 25px; }
+/* ── Main content ── */
+.main { flex:1; padding:30px; }
 
-        /* ── Section headings ── */
-        .section-title {
-            font-size: 18px; font-weight: bold;
-            color: #3f6db3; margin: 30px 0 15px;
-            border-left: 4px solid #3f6db3; padding-left: 10px;
-        }
+.page-title {
+  font-size:22px; font-weight:bold; color:#2c5aa0;
+  margin-bottom:6px;
+}
+.page-sub { font-size:13px; color:#888; margin-bottom:24px; }
 
-        /* ── Performance charts ── */
-        .chart-container {
-            display: flex; gap: 25px; flex-wrap: wrap; margin-bottom: 10px;
-        }
-        .chart-box {
-            background: white; padding: 18px;
-            border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            flex: 1; min-width: 280px; max-width: 380px;
-        }
-        .chart-box h4 { color: #444; margin-bottom: 12px; font-size: 14px; }
-        canvas { width: 100% !important; height: 200px !important; }
+/* ── Cards ── */
+.card {
+  background:white; border-radius:10px;
+  padding:28px 30px; box-shadow:0 2px 8px rgba(0,0,0,0.09);
+  margin-bottom:22px;
+}
+.card-title {
+  font-size:16px; font-weight:bold; color:#2c5aa0;
+  margin-bottom:4px; display:flex; align-items:center; gap:8px;
+}
+.card-sub { font-size:13px; color:#999; margin-bottom:18px; }
 
-        /* ── Summary cards ── */
-        .summary-cards {
-            display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px;
-        }
-        .card {
-            background: white; border-radius: 10px;
-            padding: 18px 24px; flex: 1; min-width: 140px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            text-align: center;
-        }
-        .card .num { font-size: 32px; font-weight: bold; }
-        .card .lbl { font-size: 13px; color: #777; margin-top: 4px; }
-        .card.blue   .num { color: #3f6db3; }
-        .card.green  .num { color: #28a745; }
-        .card.orange .num { color: #fd7e14; }
-        .card.red    .num { color: #dc3545; }
+/* ── Input row ── */
+.input-row { display:flex; gap:10px; }
+.input-row input {
+  flex:1; padding:10px 14px; border:1px solid #ccc;
+  border-radius:6px; font-size:15px;
+}
+.input-row input:focus { outline:none; border-color:#3f6db3; }
 
-        /* ── Course tracking table ── */
-        .table-wrapper {
-            background: white; border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            overflow: hidden;
-        }
-        .table-controls {
-            display: flex; gap: 10px; padding: 15px; flex-wrap: wrap; align-items: center;
-            border-bottom: 1px solid #eee;
-        }
-        .filter-btn {
-            padding: 7px 14px; border: none; background: #3f6db3;
-            color: white; border-radius: 5px; cursor: pointer; font-size: 13px;
-        }
-        .filter-btn:hover { background: #2f5fa7; }
-        .filter-btn.active { background: #1e3f73; }
-        .search-input {
-            padding: 7px 12px; border: 1px solid #ccc;
-            border-radius: 5px; font-size: 13px; width: 200px;
-        }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th {
-            background: #3f6db3; color: white;
-            padding: 10px 12px; text-align: left;
-        }
-        td { padding: 10px 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        tr:hover { background: #f0f4ff; }
+.btn {
+  padding:10px 22px; background:#3f6db3; color:white;
+  border:none; border-radius:6px; cursor:pointer;
+  font-size:14px; white-space:nowrap; font-weight:500;
+}
+.btn:hover { background:#2f5fa7; }
 
-        /* ── Progress bar ── */
-        .progress-wrap {
-            background: #e9ecef; border-radius: 20px;
-            height: 10px; width: 120px; overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%; border-radius: 20px; transition: width 0.4s;
-        }
-        .pct-label { font-size: 11px; color: #555; margin-top: 2px; }
+/* ── Course cards ── */
+.course-card {
+  border:1px solid #e0e6f0; border-radius:8px;
+  padding:16px 20px; margin-bottom:12px;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px; flex-wrap:wrap; transition:box-shadow 0.2s;
+}
+.course-card:hover { box-shadow:0 2px 8px rgba(63,109,179,0.12); }
+.course-info h3 { font-size:15px; color:#222; margin:0 0 4px 0; }
+.course-info p  { font-size:12px; color:#888; margin:0; }
 
-        /* ── Status badges ── */
-        .badge {
-            display: inline-block; padding: 3px 10px;
-            border-radius: 10px; font-size: 11px; font-weight: bold;
-        }
-        .badge-completed  { background: #d4edda; color: #155724; }
-        .badge-inprogress { background: #cce5ff; color: #004085; }
-        .badge-overdue    { background: #f8d7da; color: #721c24; }
+.badge { display:inline-block; padding:3px 10px; border-radius:10px; font-size:12px; font-weight:bold; }
+.badge-completed  { background:#d4edda; color:#155724; }
+.badge-inprogress { background:#fff3cd; color:#856404; }
+.badge-overdue    { background:#f8d7da; color:#721c24; }
 
-        /* ── Days remaining pill ── */
-        .days-pill {
-            display: inline-block; padding: 3px 9px;
-            border-radius: 10px; font-size: 11px; font-weight: bold;
-            background: #fff3cd; color: #856404;
-        }
-        .days-pill.done { background: #d4edda; color: #155724; }
-        .days-pill.late { background: #f8d7da; color: #721c24; }
+.complete-btn {
+  padding:8px 18px; background:#28a745; color:white;
+  border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:500;
+}
+.complete-btn:hover { background:#218838; }
+.complete-btn:disabled { background:#aaa; cursor:not-allowed; }
 
-        /* ── Course tracking chart ── */
-        .course-chart-row {
-            display: flex; gap: 25px; flex-wrap: wrap; margin-bottom: 25px;
-        }
+/* ── Alerts ── */
+.alert {
+  padding:11px 16px; border-radius:6px;
+  font-size:13px; margin-bottom:14px; display:none;
+}
+.alert-error   { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+.alert-success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
 
-        /* ── Pagination ── */
-        .pagination {
-            display: flex; justify-content: center; align-items: center;
-            gap: 6px; padding: 16px; flex-wrap: wrap;
-            border-top: 1px solid #eee;
-        }
-        .page-btn {
-            padding: 6px 12px; border: 1px solid #ccc; background: white;
-            border-radius: 5px; cursor: pointer; font-size: 13px; color: #333;
-            min-width: 36px; text-align: center;
-        }
-        .page-btn:hover { background: #e8eef8; border-color: #3f6db3; color: #3f6db3; }
-        .page-btn.active { background: #3f6db3; color: white; border-color: #3f6db3; font-weight: bold; }
-        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .page-info { font-size: 13px; color: #666; margin: 0 8px; }
+/* ── Empty / spinner ── */
+.empty-state { text-align:center; padding:30px 0; color:#bbb; }
+.empty-state i { font-size:38px; margin-bottom:10px; display:block; }
+#spinner { display:none; font-size:13px; color:#3f6db3; margin-top:10px; }
 
-        .back-btn {
-            padding: 8px 15px; background: #ccc; color: #333;
-            border-radius: 5px; text-decoration: none; font-size: 13px;
-        }
-    </style>
+/* ── Summary bar ── */
+.summary-bar {
+  display:flex; gap:16px; margin-bottom:20px; flex-wrap:wrap;
+}
+.summary-pill {
+  background:#f0f4ff; border:1px solid #d0dcf5;
+  border-radius:20px; padding:6px 16px;
+  font-size:13px; color:#2c5aa0; font-weight:500;
+}
+</style>
 </head>
 <body>
 
+<!-- ── Topbar ── -->
 <div class="topbar">
-    <h2 style="margin:0;">Performance &amp; Course Tracking</h2>
-    <div>
-        <a href="dashboard.html">Dashboard</a>
-        <a href="analysis.html">Analysis</a>
-        <a href="upload.html">Upload</a>
-        <a href="admin.html">Admin</a>
-    </div>
+  <h2><i class="fa fa-chart-line"></i> Employee Analytics Dashboard</h2>
+  <div style="display:flex;align-items:center;gap:4px;">
+    <a href="upload.html">Upload Data</a>
+    <a href="analysis.html">Analysis</a>
+    <a href="performance.html">Performance</a>
+    <a href="admin.html">Admin</a>
+    <a href="portal.html" style="background:rgba(255,255,255,0.2);padding:4px 10px;border-radius:5px;">Portal</a>
+    <span id="welcomeUser" style="font-size:13px;opacity:0.85;margin-left:12px;"></span>
+    <button onclick="logout()" class="logout-btn" style="margin-left:8px;">Logout</button>
+  </div>
 </div>
 
-<div class="page">
+<!-- ── Body ── -->
+<div class="container">
 
-    <!-- ════════════════════════════════════
-         SECTION 1 — Performance Charts
-    ════════════════════════════════════ -->
-    <div class="section-title">📊 Employee Performance Overview</div>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <ul>
+      <li><a href="dashboard.html"><i class="fa fa-home"></i> Dashboard</a></li>
+      <li><a href="upload.html"><i class="fa fa-upload"></i> Upload Data</a></li>
+      <li><a href="analysis.html"><i class="fa fa-chart-line"></i> Analysis</a></li>
+      <li><a href="performance.html"><i class="fa fa-user-group"></i> Performance</a></li>
+      <li><a href="admin.html"><i class="fa fa-user-shield"></i> Admin</a></li>
+      <li class="active"><a href="portal.html"><i class="fa fa-graduation-cap"></i> Portal</a></li>
+    </ul>
+  </div>
 
-    <div class="chart-container">
-        <div class="chart-box">
-            <h4>Performance Category</h4>
-            <canvas id="pie"></canvas>
-        </div>
-        <div class="chart-box">
-            <h4>Bench Duration (Days)</h4>
-            <canvas id="bar"></canvas>
-        </div>
+  <!-- Main -->
+  <div class="main">
+
+    <div class="page-title"><i class="fa fa-graduation-cap"></i> Employee Self-Service Portal</div>
+    <div class="page-sub">Employees can look up and mark their assigned courses as complete — no login required.</div>
+
+    <!-- Step 1: Name lookup -->
+    <div class="card">
+      <div class="card-title"><i class="fa fa-user"></i> Find Your Courses</div>
+      <div class="card-sub">Enter your full name exactly as registered by your admin.</div>
+
+      <div id="lookupError" class="alert alert-error"></div>
+
+      <div class="input-row">
+        <input
+          type="text"
+          id="empName"
+          placeholder="e.g. Ravi Kumar"
+          onkeydown="if(event.key==='Enter') lookupCourses()"
+        />
+        <button class="btn" onclick="lookupCourses()">
+          <i class="fa fa-search"></i> Find My Courses
+        </button>
+      </div>
+      <div id="spinner"><i class="fa fa-spinner fa-spin"></i> Searching...</div>
     </div>
 
+    <!-- Step 2: Results (hidden until lookup) -->
+    <div class="card" id="coursesCard" style="display:none;">
+      <div class="card-title" id="courseCardTitle"></div>
+      <div class="card-sub">Click <strong>Mark Complete</strong> on any course you have finished.</div>
 
-    <!-- ════════════════════════════════════
-         SECTION 2 — Course Tracking Summary
-    ════════════════════════════════════ -->
-    <div class="section-title">📚 Course Tracking Summary</div>
+      <div id="successAlert" class="alert alert-success"></div>
+      <div id="errorAlert"   class="alert alert-error"></div>
 
-    <div class="summary-cards">
-        <div class="card blue">
-            <div class="num" id="totalCourses">—</div>
-            <div class="lbl">Total Assigned</div>
-        </div>
-        <div class="card green">
-            <div class="num" id="completedCourses">—</div>
-            <div class="lbl">Completed</div>
-        </div>
-        <div class="card orange">
-            <div class="num" id="inProgressCourses">—</div>
-            <div class="lbl">In Progress</div>
-        </div>
-        <div class="card red">
-            <div class="num" id="overdueCourses">—</div>
-            <div class="lbl">Overdue</div>
-        </div>
+      <div id="summaryBar" class="summary-bar"></div>
+      <div id="coursesList"></div>
     </div>
 
-    <!-- Course Status + Timeline Charts -->
-    <div class="course-chart-row">
-        <div class="chart-box">
-            <h4>Course Status Breakdown</h4>
-            <canvas id="courseStatusChart"></canvas>
-        </div>
-        <div class="chart-box">
-            <h4>Avg Progress by Course</h4>
-            <canvas id="courseProgressChart"></canvas>
-        </div>
-    </div>
-
-
-    <!-- ════════════════════════════════════
-         SECTION 3 — Course Tracking Table
-    ════════════════════════════════════ -->
-    <div class="section-title">🗂️ Course Tracking Details</div>
-
-    <div class="table-wrapper">
-        <div class="table-controls">
-            <button class="filter-btn active" onclick="filterCourses('all',        this)">All</button>
-            <button class="filter-btn"        onclick="filterCourses('In Progress', this)">In Progress</button>
-            <button class="filter-btn"        onclick="filterCourses('Completed',   this)">Completed</button>
-            <button class="filter-btn"        onclick="filterCourses('Overdue',     this)">Overdue</button>
-            <input  class="search-input" id="courseSearch" placeholder="Search employee or course…" oninput="renderCourseTable()">
-            <a href="dashboard.html" class="back-btn">⬅ Back</a>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Employee</th>
-                    <th>Course</th>
-                    <th>Assigned</th>
-                    <th>Deadline</th>
-                    <th>Progress</th>
-                    <th>Days Left</th>
-                    <th>Status</th>
-                    <th>Completed On</th>
-                </tr>
-            </thead>
-            <tbody id="courseTable"></tbody>
-        </table>
-        <div class="pagination" id="coursePagination"></div>
-    </div>
-
-</div><!-- /page -->
+  </div>
+</div>
 
 <script>
-const API = "https://workforce-competency-management-system.onrender.com";
+  const API = "https://workforce-competency-management-system.onrender.com";
 
-// Guard
-if (!localStorage.getItem("loggedInUser")) {
+  let currentName = "";
+
+  // Show welcome name from localStorage (same as other pages)
+  const stored = localStorage.getItem("userName");
+  if (stored) document.getElementById("welcomeUser").textContent = "Hello, " + stored;
+
+  function logout() {
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
     window.location.href = "login.html";
-}
+  }
 
-let allCourseData  = [];
-let activeCourseFilter = "all";
+  async function lookupCourses() {
+    const nameInput = document.getElementById("empName");
+    const name = nameInput.value.trim();
 
-window.onload = async function () {
-    // ── Performance charts (existing) ──────────────────────────
-    const empData = JSON.parse(localStorage.getItem("employeeData")) || [];
-    loadPerformanceCharts(empData);
+    if (!name) {
+      showAlert("lookupError", "Please enter your full name.");
+      return;
+    }
 
-    // ── Course tracking data ────────────────────────────────────
+    currentName = name;
+    hideAlert("lookupError");
+    document.getElementById("spinner").style.display = "block";
+    document.getElementById("coursesCard").style.display = "none";
+
     try {
-        const res = await fetch(`${API}/course-tracking`);
-        allCourseData = await res.json();
-        localStorage.setItem("courseTrackingData", JSON.stringify(allCourseData));
-    } catch (e) {
-        allCourseData = JSON.parse(localStorage.getItem("courseTrackingData")) || [];
-    }
+      const res  = await fetch(`${API}/portal/my-courses?name=${encodeURIComponent(name)}`);
+      const data = await res.json();
 
-    loadCourseSummaryCards(allCourseData);
-    loadCourseCharts(allCourseData);
-    renderCourseTable();
-};
+      document.getElementById("spinner").style.display = "none";
 
-
-/* ─────────────────────────────────────────────
-   PERFORMANCE CHARTS  (your existing logic)
-───────────────────────────────────────────── */
-function loadPerformanceCharts(data) {
-    let high = 0, mod = 0, low = 0;
-    let b1 = 0, b2 = 0, b3 = 0, b4 = 0;
-
-    data.forEach(e => {
-        const days = Number(e["TOTAL AVB DAYS (MTD)"]);
-        if (days < 10) high++; else if (days <= 20) mod++; else low++;
-        if (days <= 10) b1++; else if (days <= 20) b2++; else if (days <= 30) b3++; else b4++;
-    });
-
-    new Chart(document.getElementById("pie"), {
-        type: "doughnut",
-        data: {
-            labels: ["High", "Moderate", "Low"],
-            datasets: [{ data: [high, mod, low], backgroundColor: ["#28a745", "#fd7e14", "#dc3545"] }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-
-    new Chart(document.getElementById("bar"), {
-        type: "bar",
-        data: {
-            labels: ["0–10", "11–20", "21–30", ">30"],
-            datasets: [{
-                label: "Bench Days", data: [b1, b2, b3, b4],
-                backgroundColor: ["#3f6db3", "#fd7e14", "#6f42c1", "#dc3545"]
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-}
-
-
-/* ─────────────────────────────────────────────
-   COURSE SUMMARY CARDS
-───────────────────────────────────────────── */
-function loadCourseSummaryCards(data) {
-    const total     = data.length;
-    const completed = data.filter(r => r.status === "Completed").length;
-    const inprog    = data.filter(r => r.status === "In Progress").length;
-    const overdue   = data.filter(r => r.status === "Overdue").length;
-
-    document.getElementById("totalCourses").textContent    = total;
-    document.getElementById("completedCourses").textContent = completed;
-    document.getElementById("inProgressCourses").textContent = inprog;
-    document.getElementById("overdueCourses").textContent  = overdue;
-}
-
-
-/* ─────────────────────────────────────────────
-   COURSE CHARTS
-───────────────────────────────────────────── */
-function loadCourseCharts(data) {
-    // Status donut
-    const completed = data.filter(r => r.status === "Completed").length;
-    const inprog    = data.filter(r => r.status === "In Progress").length;
-    const overdue   = data.filter(r => r.status === "Overdue").length;
-
-    new Chart(document.getElementById("courseStatusChart"), {
-        type: "doughnut",
-        data: {
-            labels: ["Completed", "In Progress", "Overdue"],
-            datasets: [{
-                data: [completed, inprog, overdue],
-                backgroundColor: ["#28a745", "#3f6db3", "#dc3545"]
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
-
-    // Avg progress per course (bar)
-    const courseMap = {};
-    data.forEach(r => {
-        if (!courseMap[r.course_name]) courseMap[r.course_name] = [];
-        courseMap[r.course_name].push(r.progress_percent);
-    });
-    const courseLabels = Object.keys(courseMap).slice(0, 8); // max 8 for readability
-    const courseAvgs   = courseLabels.map(c => {
-        const arr = courseMap[c];
-        return Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
-    });
-
-    new Chart(document.getElementById("courseProgressChart"), {
-        type: "bar",
-        data: {
-            labels: courseLabels.length ? courseLabels : ["No Data"],
-            datasets: [{
-                label: "Avg Progress %",
-                data: courseAvgs.length ? courseAvgs : [0],
-                backgroundColor: "#3f6db3"
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            scales: { y: { min: 0, max: 100 } }
-        }
-    });
-}
-
-
-/* ─────────────────────────────────────────────
-   COURSE TABLE
-───────────────────────────────────────────── */
-const COURSE_PAGE_SIZE = 10;
-let courseCurrentPage  = 1;
-let courseFiltered     = [];
-
-function filterCourses(status, btn) {
-    activeCourseFilter = status;
-    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-    if (btn) btn.classList.add("active");
-    renderCourseTable();
-}
-
-function renderCourseTable() {
-    const q = (document.getElementById("courseSearch").value || "").toLowerCase();
-
-    courseFiltered = allCourseData;
-    if (activeCourseFilter !== "all") courseFiltered = courseFiltered.filter(r => r.status === activeCourseFilter);
-    if (q) courseFiltered = courseFiltered.filter(r =>
-        (r.employee_name || "").toLowerCase().includes(q) ||
-        (r.course_name   || "").toLowerCase().includes(q)
-    );
-
-    renderCoursePage(1);
-}
-
-function renderCoursePage(page) {
-    courseCurrentPage = page;
-    const total = courseFiltered.length;
-    const start = (page - 1) * COURSE_PAGE_SIZE;
-    const end   = Math.min(start + COURSE_PAGE_SIZE, total);
-    const slice = courseFiltered.slice(start, end);
-
-    const tbody = document.getElementById("courseTable");
-    tbody.innerHTML = "";
-
-    if (!total) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#999;padding:20px;">No records found.</td></tr>`;
-        document.getElementById("coursePagination").innerHTML = "";
+      if (!res.ok) {
+        showAlert("lookupError", data.detail || "No courses found. Check your name spelling.");
         return;
+      }
+
+      renderCourses(data, name);
+
+    } catch (err) {
+      document.getElementById("spinner").style.display = "none";
+      showAlert("lookupError", "Cannot connect to server. Please try again.");
+    }
+  }
+
+  function renderCourses(courses, name) {
+    const card  = document.getElementById("coursesCard");
+    const title = document.getElementById("courseCardTitle");
+    const list  = document.getElementById("coursesList");
+    const bar   = document.getElementById("summaryBar");
+
+    title.innerHTML = `<i class="fa fa-book-open"></i> Courses for <em>${name}</em>`;
+    card.style.display = "block";
+    hideAlert("successAlert");
+    hideAlert("errorAlert");
+
+    // Summary pills
+    const total     = courses.length;
+    const completed = courses.filter(c => c.status === "Completed").length;
+    const overdue   = courses.filter(c => c.status === "Overdue").length;
+    const inprog    = total - completed - overdue;
+
+    bar.innerHTML = `
+      <span class="summary-pill"><i class="fa fa-list"></i> Total: ${total}</span>
+      <span class="summary-pill" style="background:#d4edda;border-color:#b8dfc4;color:#155724;"><i class="fa fa-check-circle"></i> Completed: ${completed}</span>
+      ${inprog  > 0 ? `<span class="summary-pill" style="background:#fff3cd;border-color:#ffe69c;color:#856404;"><i class="fa fa-clock"></i> In Progress: ${inprog}</span>` : ""}
+      ${overdue > 0 ? `<span class="summary-pill" style="background:#f8d7da;border-color:#f5c6cb;color:#721c24;"><i class="fa fa-exclamation-circle"></i> Overdue: ${overdue}</span>` : ""}
+    `;
+
+    if (!courses.length) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <i class="fa fa-inbox"></i>
+          <p>No courses assigned yet.</p>
+        </div>`;
+      return;
     }
 
-    slice.forEach((r, i) => {
-        const statusClass =
-            r.status === "Completed" ? "badge-completed"  :
-            r.status === "Overdue"   ? "badge-overdue"    : "badge-inprogress";
-        const fillColor =
-            r.status === "Completed" ? "#28a745" :
-            r.status === "Overdue"   ? "#dc3545" : "#3f6db3";
-        const daysClass =
-            r.status === "Completed" ? "done" : r.status === "Overdue" ? "late" : "";
-        const daysLabel =
-            r.status === "Completed" ? "Done" :
-            r.status === "Overdue"   ? "Overdue" : `${r.days_remaining}d left`;
+    list.innerHTML = courses.map(c => {
+      const badgeClass =
+        c.status === "Completed" ? "badge-completed"  :
+        c.status === "Overdue"   ? "badge-overdue"    :
+                                   "badge-inprogress";
 
-        tbody.innerHTML += `<tr>
-            <td>${start + i + 1}</td>
-            <td>${r.employee_name || "—"}</td>
-            <td>${r.course_name   || "—"}</td>
-            <td>${r.assigned_date || "—"}</td>
-            <td>${r.deadline_date || "—"}</td>
-            <td>
-                <div class="progress-wrap">
-                    <div class="progress-fill" style="width:${r.progress_percent}%;background:${fillColor};"></div>
-                </div>
-                <div class="pct-label">${r.progress_percent}%</div>
-            </td>
-            <td><span class="days-pill ${daysClass}">${daysLabel}</span></td>
-            <td><span class="badge ${statusClass}">${r.status}</span></td>
-            <td>${r.completion_date || "—"}</td>
-        </tr>`;
-    });
+      const btnLabel    = c.status === "Completed" ? "✅ Done" : "Mark Complete";
+      const btnDisabled = c.status === "Completed" ? "disabled" : "";
 
-    renderCoursePagination(total, page);
-}
+      const daysInfo = c.completion_date
+        ? `Completed: ${c.completion_date}`
+        : c.days_remaining > 0
+          ? `${c.days_remaining} day(s) remaining`
+          : "Deadline passed";
 
-function renderCoursePagination(total, current) {
-    const totalPages = Math.ceil(total / COURSE_PAGE_SIZE);
-    const pag = document.getElementById("coursePagination");
-    pag.innerHTML = "";
-    if (totalPages <= 1) return;
+      return `
+        <div class="course-card" id="course_${c.id}">
+          <div class="course-info">
+            <h3><i class="fa fa-book" style="color:#3f6db3;margin-right:6px;"></i>${c.course_name}</h3>
+            <p>Assigned: ${c.assigned_date} &nbsp;|&nbsp; Deadline: ${c.deadline_date} &nbsp;|&nbsp; ${daysInfo}</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+            <span class="badge ${badgeClass}" id="badge_${c.id}">${c.status}</span>
+            <button
+              class="complete-btn"
+              id="btn_${c.id}"
+              onclick="markComplete(${c.id})"
+              ${btnDisabled}
+            >${btnLabel}</button>
+          </div>
+        </div>`;
+    }).join("");
+  }
 
-    const prev = document.createElement("button");
-    prev.className = "page-btn"; prev.textContent = "‹ Prev";
-    prev.disabled = current === 1;
-    prev.onclick = () => renderCoursePage(current - 1);
-    pag.appendChild(prev);
+  async function markComplete(recordId) {
+    const btn   = document.getElementById(`btn_${recordId}`);
+    const badge = document.getElementById(`badge_${recordId}`);
 
-    let startP = Math.max(1, current - 2);
-    let endP   = Math.min(totalPages, startP + 4);
-    if (endP - startP < 4) startP = Math.max(1, endP - 4);
+    btn.disabled    = true;
+    btn.textContent = "Saving...";
+    hideAlert("successAlert");
+    hideAlert("errorAlert");
 
-    if (startP > 1) { pag.appendChild(cPageBtn(1, current)); if (startP > 2) pag.appendChild(cEllipsis()); }
-    for (let p = startP; p <= endP; p++) pag.appendChild(cPageBtn(p, current));
-    if (endP < totalPages) { if (endP < totalPages - 1) pag.appendChild(cEllipsis()); pag.appendChild(cPageBtn(totalPages, current)); }
+    try {
+      const res  = await fetch(`${API}/portal/complete/${recordId}`, {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ employee_name: currentName })
+      });
+      const data = await res.json();
 
-    const next = document.createElement("button");
-    next.className = "page-btn"; next.textContent = "Next ›";
-    next.disabled = current === totalPages;
-    next.onclick = () => renderCoursePage(current + 1);
-    pag.appendChild(next);
+      if (!res.ok) {
+        btn.disabled    = false;
+        btn.textContent = "Mark Complete";
+        showAlert("errorAlert", data.detail || "Something went wrong. Try again.");
+        return;
+      }
 
-    const info = document.createElement("span");
-    info.className = "page-info";
-    info.textContent = `Page ${current} of ${totalPages} · ${total} record(s)`;
-    pag.appendChild(info);
-}
+      // Update UI in place
+      btn.textContent       = "✅ Done";
+      badge.className       = "badge badge-completed";
+      badge.textContent     = "Completed";
 
-function cPageBtn(p, current) {
-    const btn = document.createElement("button");
-    btn.className = "page-btn" + (p === current ? " active" : "");
-    btn.textContent = p;
-    btn.onclick = () => renderCoursePage(p);
-    return btn;
-}
+      // Update info line
+      const info = document.querySelector(`#course_${recordId} .course-info p`);
+      if (info) {
+        info.innerHTML = info.innerHTML.replace(/\d+ day.*?(&nbsp;|$)/, `Completed: today&nbsp;`);
+      }
 
-function cEllipsis() {
-    const s = document.createElement("span");
-    s.textContent = "…"; s.style.cssText = "padding:6px 4px;color:#999;font-size:13px;";
-    return s;
-}
+      showAlert("successAlert", data.message || "Course marked as completed!");
+
+      // Refresh summary
+      refreshSummary();
+
+    } catch (err) {
+      btn.disabled    = false;
+      btn.textContent = "Mark Complete";
+      showAlert("errorAlert", "Connection error. Please try again.");
+    }
+  }
+
+  function refreshSummary() {
+    const badges    = [...document.querySelectorAll(".badge")];
+    const total     = badges.length;
+    const completed = badges.filter(b => b.classList.contains("badge-completed")).length;
+    const overdue   = badges.filter(b => b.classList.contains("badge-overdue")).length;
+    const inprog    = total - completed - overdue;
+    const bar       = document.getElementById("summaryBar");
+    bar.innerHTML = `
+      <span class="summary-pill"><i class="fa fa-list"></i> Total: ${total}</span>
+      <span class="summary-pill" style="background:#d4edda;border-color:#b8dfc4;color:#155724;"><i class="fa fa-check-circle"></i> Completed: ${completed}</span>
+      ${inprog  > 0 ? `<span class="summary-pill" style="background:#fff3cd;border-color:#ffe69c;color:#856404;"><i class="fa fa-clock"></i> In Progress: ${inprog}</span>` : ""}
+      ${overdue > 0 ? `<span class="summary-pill" style="background:#f8d7da;border-color:#f5c6cb;color:#721c24;"><i class="fa fa-exclamation-circle"></i> Overdue: ${overdue}</span>` : ""}
+    `;
+  }
+
+  function showAlert(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent   = msg;
+    el.style.display = "block";
+    if (id === "successAlert") setTimeout(() => el.style.display = "none", 5000);
+  }
+
+  function hideAlert(id) {
+    document.getElementById(id).style.display = "none";
+  }
 </script>
-
 </body>
 </html>
